@@ -4,3 +4,4 @@ python-docx
 supabase
 qrcode
 Pillow
+openpyxl
