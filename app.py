@@ -77,14 +77,23 @@ def check_auth(supabase: Client):
                         if len(res.data) > 0:
                             han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
                             hom_nay = date.today()
-                            
+                                                        
                             if hom_nay <= han_dung:
-                                st.session_state["logged_in"] = True
-                                st.session_state["email"] = email
-                                st.session_state["han_dung"] = han_dung
-                                st.rerun() # Tải lại trang để vào trong
+                            st.session_state["logged_in"] = True
+                            st.session_state["email"] = email
+                            st.session_state["han_dung"] = han_dung
+                            st.rerun() 
                             else:
-                                st.error(f"⚠️ Tài khoản của bạn đã hết hạn vào ngày {han_dung.strftime('%d/%m/%Y')}. Vui lòng liên hệ Thầy Thành (Zalo: 09xx) để gia hạn.")
+                            # Đoạn này thụt vào 18 dấu cách (hoặc 1 phím Tab so với chữ 'else')
+                            st.error(f"⚠️ Tài khoản hết hạn vào ngày {han_dung.strftime('%d/%m/%Y')}.")
+                            st.markdown(f"""
+                                <a href="https://zalo.me/0937177439" target="_blank" style="text-decoration: none;">
+                                    <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
+                                        💬 Nhấn vào đây để liên hệ Zalo gia hạn (Admin)
+                                    </div>
+                                </a>
+                            """, unsafe_allow_html=True)
+                            st.stop()
                         else:
                             st.error("Không tìm thấy thông tin gói cước. Vui lòng liên hệ Admin.")
                     except Exception as e:
@@ -112,7 +121,8 @@ def check_auth(supabase: Client):
                             ngay_het_han = date.today() + timedelta(days=60)
                             supabase.table("users_data").insert({"email": reg_email, "ngay_het_han": str(ngay_het_han)}).execute()
                             
-                            st.success("🎉 Đăng ký thành công! Bạn đã được cấp 60 ngày dùng thử. Vui lòng chuyển sang tab Đăng nhập để vào hệ thống.")
+                            st.success("🎉 Đăng ký thành công! Bạn được cấp 60 ngày dùng thử. Một email xác nhận đã được gửi đến hòm thư của bạn. Vui lòng kiểm tra và bấm vào link xác nhận để kích hoạt tài khoản trước khi đăng nhập.")
+                            st.info("💡 Lưu ý: Nếu không thấy email, bạn hãy kiểm tra trong mục Thư rác (Spam) nhé!")
                         except Exception as e:
                             st.error(f"Lỗi đăng ký (Có thể email này đã tồn tại): {str(e)}")
         
@@ -187,6 +197,15 @@ def main():
         
     config = giaodien.hien_thi_sidebar()
     inputs = giaodien.hien_thi_man_hinh_chinh(config)
+
+    # Dán ở đây, thẳng hàng với chữ 'inputs' ở trên
+    with st.expander("📖 HƯỚNG DẪN SỬ DỤNG NHANH"):
+        st.info("""
+        1. **Chuẩn bị:** Đề gốc đúng định dạng Câu 1, Câu 2...
+        2. **Tải lên:** Chọn file Word (.docx) từ máy.
+        3. **Cấu hình:** Chọn số mã đề cần trộn.
+        4. **Kết quả:** Tải file nén .zip về máy.
+        """)
 
     # 1. LOGIC CHUẨN HÓA (ĐÃ PHÂN 2 LUỒNG SẠCH/DƠ)
     if inputs['file_de_goc']:
