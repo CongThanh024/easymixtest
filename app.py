@@ -78,22 +78,22 @@ def check_auth(supabase: Client):
                             han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
                             hom_nay = date.today()
                                                         
+# --- ĐOẠN 1: Dòng 81 trong app.py ---
                             if hom_nay <= han_dung:
-                            st.session_state["logged_in"] = True
-                            st.session_state["email"] = email
-                            st.session_state["han_dung"] = han_dung
-                            st.rerun() 
+                                st.session_state["logged_in"] = True
+                                st.session_state["email"] = email
+                                st.session_state["han_dung"] = han_dung
+                                st.rerun() 
                             else:
-                            # Đoạn này thụt vào 18 dấu cách (hoặc 1 phím Tab so với chữ 'else')
-                            st.error(f"⚠️ Tài khoản hết hạn vào ngày {han_dung.strftime('%d/%m/%Y')}.")
-                            st.markdown(f"""
-                                <a href="https://zalo.me/0937177439" target="_blank" style="text-decoration: none;">
-                                    <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
-                                        💬 Nhấn vào đây để liên hệ Zalo gia hạn (Admin)
-                                    </div>
-                                </a>
-                            """, unsafe_allow_html=True)
-                            st.stop()
+                                st.error(f"⚠️ Tài khoản hết hạn vào ngày {han_dung.strftime('%d/%m/%Y')}.")
+                                st.markdown(f"""
+                                    <a href="https://zalo.me/0937177439" target="_blank" style="text-decoration: none;">
+                                        <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
+                                            💬 Nhấn vào đây để liên hệ Zalo gia hạn (Admin)
+                                        </div>
+                                    </a>
+                                """, unsafe_allow_html=True)
+                                st.stop()
                         else:
                             st.error("Không tìm thấy thông tin gói cước. Vui lòng liên hệ Admin.")
                     except Exception as e:
