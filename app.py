@@ -48,16 +48,14 @@ def check_auth(supabase: Client):
     if "show_guide" not in st.session_state:
         st.session_state["show_guide"] = False
 
-    # --- CHIA MẶT TIỀN 3 CỘT (Trái - Giữa - Phải) ---
+    # --- CHIA MẶT TIỀN 3 CỘT ---
     col_trai, col_giua, col_phai = st.columns([1, 1.5, 1])
     
-    # 1. CỘT TRÁI: NÚT HƯỚNG DẪN
+    # 1. CỘT TRÁI: (Đã dời nút Hướng dẫn sang Sidebar, để trống cho thoáng)
     with col_trai:
-        st.write("") # Tạo khoảng trống cho cân đối
-        if st.button("📖 Hướng dẫn trộn đề", use_container_width=True):
-            st.session_state["show_guide"] = not st.session_state["show_guide"]
+        st.write("") 
 
-    # 2. CỘT GIỮA: LOGO + TÊN TÁC GIẢ + BẢNG HƯỚNG DẪN PDF
+    # 2. CỘT GIỮA: LOGO + TÊN TÁC GIẢ + BẢNG HƯỚNG DẪN ẢNH
     with col_giua:
         try:
             st.image("logo_app.png", use_container_width=True)
@@ -79,20 +77,16 @@ def check_auth(supabase: Client):
             """, unsafe_allow_html=True
         )
         
-        # HIỆN FILE PDF KHI BẤM NÚT
-        if st.session_state["show_guide"]:
+        # HIỆN FILE ẢNH HƯỚNG DẪN KHI BẤM NÚT (TRÁNH LỖI CHROME KHÓA PDF)
+        if st.session_state.get("show_guide"):
             with st.container(height=650, border=True):
-                import base64
-                pdf_file = "huongdan_sudung.pdf"
+                st.markdown("<h4 style='text-align:center;'>📖 CẨM NANG SỬ DỤNG EASY MIX TEST</h4>", unsafe_allow_html=True)
                 try:
-                    with open(pdf_file, "rb") as f:
-                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-                    st.markdown(pdf_display, unsafe_allow_html=True)
+                    st.image("huongdan_sudung.png", use_container_width=True)
                 except FileNotFoundError:
-                    st.info(f"⏳ Hệ thống đang chờ Admin tải file '{pdf_file}' lên...")
+                    st.info("⏳ Đang chờ hệ thống cập nhật file ảnh hướng dẫn (huongdan_sudung.png)...")
 
-    # 3. CỘT PHẢI: ĐĂNG NHẬP / ĐĂNG KÝ / QUẢN LÝ TÀI KHOẢN
+    # 3. CỘT PHẢI: ĐĂNG NHẬP / ĐĂNG KÝ
     with col_phai:
         if not st.session_state["logged_in"]:
             st.info("Vui lòng đăng nhập để sử dụng")
@@ -119,13 +113,6 @@ def check_auth(supabase: Client):
                                     st.rerun() 
                                 else:
                                     st.error(f"⚠️ Tài khoản hết hạn: {han_dung.strftime('%d/%m/%Y')}.")
-                                    st.markdown(f"""
-                                        <a href="https://zalo.me/84937177439" target="_blank" style="text-decoration: none;">
-                                            <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
-                                                💬 Liên hệ Zalo gia hạn (Admin)
-                                            </div>
-                                        </a>
-                                    """, unsafe_allow_html=True)
                                     st.stop()
                             else:
                                 st.error("Không tìm thấy gói cước.")
@@ -142,21 +129,17 @@ def check_auth(supabase: Client):
                     if submit_reg:
                         if reg_password != reg_confirm:
                             st.error("❌ Mật khẩu không khớp!")
-                        elif len(reg_password) < 6:
-                            st.error("❌ Mật khẩu quá ngắn!")
                         else:
                             try:
                                 new_user = supabase.auth.sign_up({"email": reg_email, "password": reg_password})
                                 ngay_het_han = date.today() + timedelta(days=60)
                                 supabase.table("users_data").insert({"email": reg_email, "ngay_het_han": str(ngay_het_han)}).execute()
                                 st.success("🎉 Đăng ký thành công!")
-                                st.warning("⚠️ Mở Gmail (cả hộp Spam) bấm link xác nhận!")
-                            except Exception as e:
+                            except Exception:
                                 st.error("Lỗi đăng ký (Email đã tồn tại).")
             return False
 
         else:
-            # GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP (Hiện ở cột phải)
             st.success(f"👤 {st.session_state['email']}")
             st.warning(f"⏳ Hạn dùng: {st.session_state['han_dung'].strftime('%d/%m/%Y')}")
             if st.button("🚪 Đăng xuất", use_container_width=True):
