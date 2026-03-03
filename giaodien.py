@@ -4,49 +4,34 @@ import os
 # --- LƯU Ý: KHÔNG ĐƯỢC TỰ Ý THAY ĐỔI GIAO DIỆN NÀY NẾU KHÔNG CÓ YÊU CẦU ---
 
 def khoi_tao_session_state():
-    """Để trống các giá trị để chữ chìm (placeholder) có thể hiện ra"""
+    """Khởi tạo trạng thái để lưu vết tương tác và tránh lỗi Nút Hướng dẫn"""
+    if "show_guide" not in st.session_state:
+        st.session_state["show_guide"] = False
+
     defaults = {
-        'header_so': '',
-        'header_truong': '',
-        'header_to': '',
-        'header_kythi': '',
-        'header_namhoc': '',
-        'header_mon': '',
-        'header_thoigian': ''
+        'h_so': '', 'h_truong': '', 'h_to': '', 
+        'h_kythi': '', 'h_namhoc': '', 'h_mon': '', 'h_thoigian': ''
     }
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
 
 def hien_thi_sidebar():
-    """Hiển thị Sidebar với các tùy chọn cấu hình."""
     khoi_tao_session_state()
     config = {}
 
     with st.sidebar:
-        # --- NÚT HƯỚNG DẪN CHUYỂN SANG ĐÂY (NẰM GÓC TRÁI TRÊN CÙNG) ---
+        # --- NÚT HƯỚNG DẪN ---
         if st.button("📖 Xem Hướng dẫn trộn đề", use_container_width=True):
-            st.session_state["show_guide"] = not st.session_state.get("show_guide", False)
+            st.session_state["show_guide"] = not st.session_state["show_guide"]
             
         st.divider()
 
-        # --- CẤU HÌNH CỐT LÕI ---
+        # --- 1. CẤU HÌNH ---
         st.header("1. CẤU HÌNH")
         
-        # Thêm 'key' vào để lưu vết lựa chọn môn
-        loai_mon_input = st.radio(
-            "Chọn Môn Thi:",
-            options=["Môn KHTN/KHXH (Toán, Hóa...)", "Môn Tiếng Anh", "Môn Đánh Giá Năng Lực"],
-            index=0,
-            key="luu_chon_mon"
-        )
-        
-        if "KHTN" in loai_mon_input:
-            config['loai_mon'] = 'MON_KHAC'
-        elif "Tiếng Anh" in loai_mon_input:
-            config['loai_mon'] = 'ENG'
-        else:
-            config['loai_mon'] = 'DGNL'
+        loai_mon_input = st.radio("Chọn Môn Thi:", ["Môn KHTN/KHXH (Toán, Hóa...)", "Môn Tiếng Anh", "Môn Đánh Giá Năng Lực"], index=0, key="luu_chon_mon")
+        config['loai_mon'] = 'MON_KHAC' if "KHTN" in loai_mon_input else 'ENG' if "Tiếng Anh" in loai_mon_input else 'DGNL'
 
         c1, c2 = st.columns(2)
         with c1:
@@ -58,45 +43,43 @@ def hien_thi_sidebar():
             config['kieu_ma_de'] = 'SEQUENTIAL'
         else:
             kieu_ngau_nhien = st.selectbox("Độ dài mã:", ["3 chữ số (VD: 142)", "4 chữ số (VD: 7924)"], key="luu_kieu_ngau_nhien")
-            config['kieu_ma_de'] = 'RANDOM_4' if "4 chữ số" in kieu_ngau_nhien else 'RANDOM_3'
+            config['kieu_ma_de'] = 'RANDOM_4' if "4" in kieu_ngau_nhien else 'RANDOM_3'
 
         st.divider()
 
-        # --- TIÊU ĐỀ & TRÌNH BÀY ---
+        # --- 2. TRÌNH BÀY ĐỀ THI (ĐÃ FIX TIỀN TỐ) ---
         st.header("2. TRÌNH BÀY ĐỀ THI")
         
         config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True, key="luu_tuy_chon_header")
         if config['co_header']:
-            # ĐÃ THÊM KEY ĐỂ LƯU VẾT & CHỮ CHÌM SẼ HIỆN RA VÌ VALUE ĐƯỢC ĐỂ TRỐNG BAN ĐẦU
-            st.text_input("Tên Sở:", key="header_so", placeholder="VD: SỞ GD&ĐT HÀ NỘI")
-            st.text_input("Tên Trường:", key="header_truong", placeholder="VD: TRƯỜNG THPT CHUYÊN")
-            st.text_input("Tổ Chuyên Môn:", key="header_to", placeholder="VD: TỔ TOÁN - TIN")
+            st.caption("✨ *Hệ thống tự động thêm chữ 'Sở', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên!*")
             
-            st.text_input("Kỳ Thi:", key="header_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
-            st.text_input("Năm học:", key="header_namhoc", placeholder="VD: NĂM HỌC 2025 - 2026")
+            # Giao diện nhập ngắn gọn, dùng key để lưu vết lịch sử gõ
+            so_in = st.text_input("Tên Sở:", key="h_so", placeholder="VD: TP HỒ CHÍ MINH")
+            truong_in = st.text_input("Tên Trường:", key="h_truong", placeholder="VD: TRẦN KHAI NGUYÊN")
+            to_in = st.text_input("Tên Tổ:", key="h_to", placeholder="VD: TOÁN - TIN")
+            kythi_in = st.text_input("Tên Kỳ thi:", key="h_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
+            namhoc_in = st.text_input("Năm học (Chỉ cần nhập số):", key="h_namhoc", placeholder="VD: 2025 - 2026")
+            mon_in = st.text_input("Tên Môn:", key="h_mon", placeholder="VD: TOÁN")
+            thoigian_in = st.text_input("Thời gian (Chỉ nhập số phút):", key="h_thoigian", placeholder="VD: 90")
             
-            st.text_input("Môn Thi:", key="header_mon", placeholder="VD: MÔN VẬT LÝ 12")
-            st.text_input("Thời gian:", key="header_thoigian", placeholder="VD: Thời gian làm bài: 90 phút")
+            # [cite_start]Logic thông minh: Tự động ghép nối chuỗi chuẩn bị cho file Word [cite: 1, 2, 3]
+            # (Thêm logic replace để lỡ Giám đốc có quên gõ dư chữ "SỞ" thì máy tự xóa đi)
+            val_so = f"SỞ GD VÀ ĐT {so_in}".replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD") if so_in else ""
+            val_truong = f"TRƯỜNG THPT {truong_in}".replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT") if truong_in else ""
+            val_to = f"TỔ {to_in}".replace("TỔ TỔ", "TỔ") if to_in else ""
+            val_namhoc = f"NĂM HỌC: {namhoc_in}".replace("NĂM HỌC: NĂM HỌC:", "NĂM HỌC:") if namhoc_in else ""
+            val_thoigian = f"Thời gian làm bài: {thoigian_in} phút" if thoigian_in else ""
+            val_mon = f"Môn: MÔN {mon_in}".replace("Môn: MÔN MÔN", "Môn: MÔN") if mon_in else ""
             
             config['header_data'] = {
-                'so': st.session_state.header_so,
-                'truong': st.session_state.header_truong,
-                'to': st.session_state.header_to,
-                'kythi': st.session_state.header_kythi,
-                'namhoc': st.session_state.header_namhoc,
-                'mon': st.session_state.header_mon,
-                'thoigian': st.session_state.header_thoigian
-            }
-            
-            # [QUAN TRỌNG] Lưu cấu hình để truyền sang file Word
-            config['header_data'] = {
-                'so': st.session_state.header_so,
-                'truong': st.session_state.header_truong,
-                'to': st.session_state.header_to,
-                'kythi': st.session_state.header_kythi,
-                'namhoc': st.session_state.header_namhoc,
-                'mon': st.session_state.header_mon,
-                'thoigian': st.session_state.header_thoigian
+                'so': val_so,
+                'truong': val_truong,
+                'to': val_to,
+                'kythi': kythi_in, # Kỳ thi giữ nguyên
+                'namhoc': val_namhoc,
+                'mon': val_mon,
+                'thoigian': val_thoigian
             }
 
         st.divider()

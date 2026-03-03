@@ -43,19 +43,17 @@ def cleanup_folder(folder_path):
 # HỆ THỐNG ĐĂNG NHẬP VÀ QUẢN LÝ NGƯỜI DÙNG
 # ==========================================================
 def check_auth(supabase: Client):
-    if "logged_in" not in st.session_state:
-        st.session_state["logged_in"] = False
-    if "show_guide" not in st.session_state:
-        st.session_state["show_guide"] = False
+    # Khởi tạo biến chống lỗi
+    if "logged_in" not in st.session_state: st.session_state["logged_in"] = False
+    if "show_guide" not in st.session_state: st.session_state["show_guide"] = False
 
-    # --- CHIA MẶT TIỀN 3 CỘT ---
-    col_trai, col_giua, col_phai = st.columns([1, 1.5, 1])
+    # --- CHIA MẶT TIỀN 3 CỘT (CỘT GIỮA CỰC RỘNG: tỷ lệ 0.6 : 2.5 : 1.2) ---
+    col_trai, col_giua, col_phai = st.columns([0.6, 2.5, 1.2])
     
-    # 1. CỘT TRÁI: (Đã dời nút Hướng dẫn sang Sidebar, để trống cho thoáng)
     with col_trai:
-        st.write("") 
+        st.write("") # Cột trái để trống tạo độ thoáng
 
-    # 2. CỘT GIỮA: LOGO + TÊN TÁC GIẢ + BẢNG HƯỚNG DẪN ẢNH
+    # CỘT GIỮA: LOGO & BẢNG HƯỚNG DẪN MỞ RỘNG
     with col_giua:
         try:
             st.image("logo_app.png", use_container_width=True)
@@ -68,8 +66,7 @@ def check_auth(supabase: Client):
             <div style="text-align: center; margin-bottom: 20px;">
                 <p style="font-family: 'Dancing Script', cursive; font-size: 30px; 
                           background: -webkit-linear-gradient(45deg, #0077b6, #d90429); 
-                          -webkit-background-clip: text; 
-                          -webkit-text-fill-color: transparent; 
+                          -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
                           margin: 0; font-weight: bold; line-height: 1.2;">
                     Developed by<br>Đoàn Công Thành
                 </p>
@@ -77,16 +74,16 @@ def check_auth(supabase: Client):
             """, unsafe_allow_html=True
         )
         
-        # HIỆN FILE ẢNH HƯỚNG DẪN KHI BẤM NÚT (TRÁNH LỖI CHROME KHÓA PDF)
-        if st.session_state.get("show_guide"):
+        if st.session_state["show_guide"]:
+            # Bảng hướng dẫn giờ đây đã rất rộng rãi do col_giua chiếm phần lớn màn hình
             with st.container(height=650, border=True):
                 st.markdown("<h4 style='text-align:center;'>📖 CẨM NANG SỬ DỤNG EASY MIX TEST</h4>", unsafe_allow_html=True)
                 try:
                     st.image("huongdan_sudung.png", use_container_width=True)
                 except FileNotFoundError:
-                    st.info("⏳ Đang chờ hệ thống cập nhật file ảnh hướng dẫn (huongdan_sudung.png)...")
+                    st.info("⏳ Đang chờ tải file ảnh 'huongdan_sudung.png'...")
 
-    # 3. CỘT PHẢI: ĐĂNG NHẬP / ĐĂNG KÝ
+    # CỘT PHẢI: ĐĂNG NHẬP
     with col_phai:
         if not st.session_state["logged_in"]:
             st.info("Vui lòng đăng nhập để sử dụng")
@@ -96,6 +93,10 @@ def check_auth(supabase: Client):
                 with st.form("login_form"):
                     email = st.text_input("Email của bạn")
                     password = st.text_input("Mật khẩu", type="password")
+                    
+                    # Nút tick Ghi nhớ đăng nhập
+                    st.checkbox("Lưu thông tin đăng nhập trên trình duyệt này", value=True)
+                    
                     submit_login = st.form_submit_button("Đăng nhập", use_container_width=True)
                     
                     if submit_login:
@@ -104,9 +105,7 @@ def check_auth(supabase: Client):
                             res = supabase.table("users_data").select("ngay_het_han").eq("email", email).execute()
                             if len(res.data) > 0:
                                 han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
-                                hom_nay = date.today()
-                                                            
-                                if hom_nay <= han_dung:
+                                if date.today() <= han_dung:
                                     st.session_state["logged_in"] = True
                                     st.session_state["email"] = email
                                     st.session_state["han_dung"] = han_dung
@@ -125,10 +124,8 @@ def check_auth(supabase: Client):
                     reg_password = st.text_input("Mật khẩu (>6 ký tự)", type="password")
                     reg_confirm = st.text_input("Nhập lại", type="password")
                     submit_reg = st.form_submit_button("Đăng ký", use_container_width=True)
-                    
                     if submit_reg:
-                        if reg_password != reg_confirm:
-                            st.error("❌ Mật khẩu không khớp!")
+                        if reg_password != reg_confirm: st.error("❌ Mật khẩu không khớp!")
                         else:
                             try:
                                 new_user = supabase.auth.sign_up({"email": reg_email, "password": reg_password})
@@ -138,7 +135,6 @@ def check_auth(supabase: Client):
                             except Exception:
                                 st.error("Lỗi đăng ký (Email đã tồn tại).")
             return False
-
         else:
             st.success(f"👤 {st.session_state['email']}")
             st.warning(f"⏳ Hạn dùng: {st.session_state['han_dung'].strftime('%d/%m/%Y')}")
