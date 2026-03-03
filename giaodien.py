@@ -26,30 +26,6 @@ def hien_thi_sidebar():
     config = {}
 
     with st.sidebar:
-        # --- 1. LOGO ---
-        if os.path.exists("logo_app.png"):
-            st.image("logo_app.png", use_container_width=True)
-        else:
-            st.title("APP TRỘN ĐỀ")
-
-        # --- 2. TÊN TÁC GIẢ (GIỮ NGUYÊN FONT & MÀU) ---
-        st.markdown(
-            """
-            <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <p style="font-family: 'Dancing Script', cursive; font-size: 30px; 
-                          background: -webkit-linear-gradient(45deg, #0077b6, #d90429); 
-                          -webkit-background-clip: text; 
-                          -webkit-text-fill-color: transparent; 
-                          margin: 0; font-weight: bold; line-height: 1.2;">
-                    Developed by<br>Đoàn Công Thành
-                </p>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-        st.divider()
-
         # --- CẤU HÌNH CỐT LÕI ---
         st.header("1. CẤU HÌNH")
         
@@ -91,35 +67,25 @@ def hien_thi_sidebar():
         
         config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True)
         if config['co_header']:
-            st.session_state.header_so = st.text_input("Tên Sở:", value=st.session_state.header_so)
-            st.session_state.header_truong = st.text_input("Tên Trường:", value=st.session_state.header_truong)
-            st.session_state.header_to = st.text_input("Tổ Chuyên Môn:", value=st.session_state.header_to)
+            st.session_state.header_so = st.text_input("Tên Sở:", value="", placeholder="VD: SỞ GD&ĐT HÀ NỘI")
+            st.session_state.header_truong = st.text_input("Tên Trường:", value="", placeholder="VD: TRƯỜNG THPT CHUYÊN")
+            st.session_state.header_to = st.text_input("Tổ Chuyên Môn:", value="", placeholder="VD: TỔ TOÁN - TIN")
             
-            # KỲ THI VÀ NĂM HỌC
-            st.session_state.header_kythi = st.text_input("Kỳ Thi:", value=st.session_state.header_kythi)
-            st.session_state.header_namhoc = st.text_input("Năm học:", value=st.session_state.header_namhoc)
+            st.session_state.header_kythi = st.text_input("Kỳ Thi:", value="", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
+            st.session_state.header_namhoc = st.text_input("Năm học:", value="", placeholder="VD: NĂM HỌC 2025 - 2026")
             
-            st.session_state.header_mon = st.text_input("Môn Thi:", value=st.session_state.header_mon)
-            st.session_state.header_thoigian = st.text_input("Thời gian:", value=st.session_state.header_thoigian)
+            st.session_state.header_mon = st.text_input("Môn Thi:", value="", placeholder="VD: MÔN VẬT LÝ 12")
+            st.session_state.header_thoigian = st.text_input("Thời gian:", value="", placeholder="VD: Thời gian làm bài: 90 phút")
             
+            # [QUAN TRỌNG] Lưu cấu hình để truyền sang file Word
             config['header_data'] = {
                 'so': st.session_state.header_so,
                 'truong': st.session_state.header_truong,
-                'to_chuyen_mon': st.session_state.header_to,
-                'ky_thi': st.session_state.header_kythi,
-                'nam_hoc': st.session_state.header_namhoc,
+                'to': st.session_state.header_to,
+                'kythi': st.session_state.header_kythi,
+                'namhoc': st.session_state.header_namhoc,
                 'mon': st.session_state.header_mon,
-                'thoi_gian': st.session_state.header_thoigian
-            }
-
-        config['co_footer'] = st.checkbox("Gắn Tiêu Đề Kết Thúc (Chữ ký)", value=True)
-        if config['co_footer']:
-            c_f1, c_f2 = st.columns(2)
-            st.session_state.footer_gt1 = c_f1.text_input("Chức danh 1:", value=st.session_state.footer_gt1)
-            st.session_state.footer_gt2 = c_f2.text_input("Chức danh 2:", value=st.session_state.footer_gt2)
-            config['footer_data'] = {
-                'gt1': st.session_state.footer_gt1,
-                'gt2': st.session_state.footer_gt2
+                'thoigian': st.session_state.header_thoigian
             }
 
         st.divider()

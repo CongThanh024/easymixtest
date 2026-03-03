@@ -45,96 +45,124 @@ def cleanup_folder(folder_path):
 def check_auth(supabase: Client):
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
+    if "show_guide" not in st.session_state:
+        st.session_state["show_guide"] = False
 
-    if not st.session_state["logged_in"]:
-        # --- HIỂN THỊ LOGO CĂN GIỮA ---
-        col1, col2, col3 = st.columns([1, 1.2, 1]) 
-        with col2:
-            try:
-                st.image("logo_app.png", use_container_width=True)
-            except:
-                st.markdown("<h2 style='text-align: center; color: #1E88E5;'>EASY MIX TEST</h2>", unsafe_allow_html=True)
-                
-        st.markdown("<p style='text-align: center; font-size: 16px; margin-top: -10px;'>Vui lòng đăng nhập để sử dụng hệ thống</p>", unsafe_allow_html=True)
-        # ------------------------------
-        
-        tab1, tab2 = st.tabs(["🔐 Đăng nhập", "📝 Đăng ký dùng thử MIỄN PHÍ"])
-        
-        # --- TAB ĐĂNG NHẬP ---
-        with tab1:
-            with st.form("login_form"):
-                email = st.text_input("Email của bạn")
-                password = st.text_input("Mật khẩu", type="password")
-                submit_login = st.form_submit_button("Đăng nhập", use_container_width=True)
-                
-                if submit_login:
-                    try:
-                        # 1. Kiểm tra tài khoản
-                        user = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                        
-                        # 2. Kiểm tra hạn sử dụng trong sổ cái
-                        res = supabase.table("users_data").select("ngay_het_han").eq("email", email).execute()
-                        if len(res.data) > 0:
-                            han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
-                            hom_nay = date.today()
-                                                        
-# --- ĐOẠN 1: Dòng 81 trong app.py ---
-                            if hom_nay <= han_dung:
-                                st.session_state["logged_in"] = True
-                                st.session_state["email"] = email
-                                st.session_state["han_dung"] = han_dung
-                                st.rerun() 
-                            else:
-                                st.error(f"⚠️ Tài khoản hết hạn vào ngày {han_dung.strftime('%d/%m/%Y')}.")
-                                st.markdown(f"""
-                                    <a href="https://zalo.me/0937177439" target="_blank" style="text-decoration: none;">
-                                        <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
-                                            💬 Nhấn vào đây để liên hệ Zalo gia hạn (Admin)
-                                        </div>
-                                    </a>
-                                """, unsafe_allow_html=True)
-                                st.stop()
-                        else:
-                            st.error("Không tìm thấy thông tin gói cước. Vui lòng liên hệ Admin.")
-                    except Exception as e:
-                        st.error("❌ Sai email hoặc mật khẩu! Vui lòng thử lại.")
+    # --- CHIA MẶT TIỀN 3 CỘT (Trái - Giữa - Phải) ---
+    col_trai, col_giua, col_phai = st.columns([1, 1.5, 1])
+    
+    # 1. CỘT TRÁI: NÚT HƯỚNG DẪN
+    with col_trai:
+        st.write("") # Tạo khoảng trống cho cân đối
+        if st.button("📖 Hướng dẫn trộn đề", use_container_width=True):
+            st.session_state["show_guide"] = not st.session_state["show_guide"]
 
-        # --- TAB ĐĂNG KÝ ---
-        with tab2:
-            st.info("🎁 Tặng ngay 60 ngày dùng thử VIP khi đăng ký mới!")
-            with st.form("register_form"):
-                reg_email = st.text_input("Nhập Email (Dùng để đăng nhập)")
-                reg_password = st.text_input("Tạo Mật khẩu (Ít nhất 6 ký tự)", type="password")
-                reg_confirm = st.text_input("Nhập lại Mật khẩu", type="password")
-                submit_reg = st.form_submit_button("Đăng ký tài khoản", use_container_width=True)
-                
-                if submit_reg:
-                    if reg_password != reg_confirm:
-                        st.error("❌ Mật khẩu nhập lại không khớp!")
-                    elif len(reg_password) < 6:
-                        st.error("❌ Mật khẩu quá ngắn!")
-                    else:
+    # 2. CỘT GIỮA: LOGO + TÊN TÁC GIẢ + BẢNG HƯỚNG DẪN PDF
+    with col_giua:
+        try:
+            st.image("logo_app.png", use_container_width=True)
+        except:
+            st.markdown("<h2 style='text-align: center; color: #1E88E5;'>EASY MIX TEST</h2>", unsafe_allow_html=True)
+            
+        st.markdown(
+            """
+            <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-family: 'Dancing Script', cursive; font-size: 30px; 
+                          background: -webkit-linear-gradient(45deg, #0077b6, #d90429); 
+                          -webkit-background-clip: text; 
+                          -webkit-text-fill-color: transparent; 
+                          margin: 0; font-weight: bold; line-height: 1.2;">
+                    Developed by<br>Đoàn Công Thành
+                </p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+        
+        # HIỆN FILE PDF KHI BẤM NÚT
+        if st.session_state["show_guide"]:
+            with st.container(height=650, border=True):
+                import base64
+                pdf_file = "huongdan_sudung.pdf"
+                try:
+                    with open(pdf_file, "rb") as f:
+                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+                except FileNotFoundError:
+                    st.info(f"⏳ Hệ thống đang chờ Admin tải file '{pdf_file}' lên...")
+
+    # 3. CỘT PHẢI: ĐĂNG NHẬP / ĐĂNG KÝ / QUẢN LÝ TÀI KHOẢN
+    with col_phai:
+        if not st.session_state["logged_in"]:
+            st.info("Vui lòng đăng nhập để sử dụng")
+            tab1, tab2 = st.tabs(["🔐 Đăng nhập", "📝 Đăng ký"])
+            
+            with tab1:
+                with st.form("login_form"):
+                    email = st.text_input("Email của bạn")
+                    password = st.text_input("Mật khẩu", type="password")
+                    submit_login = st.form_submit_button("Đăng nhập", use_container_width=True)
+                    
+                    if submit_login:
                         try:
-                            # 1. Tạo user trên Supabase
-                            new_user = supabase.auth.sign_up({"email": reg_email, "password": reg_password})
-                            # 2. Tính ngày hết hạn (+60 ngày) và ghi vào sổ cái users_data
-                            ngay_het_han = date.today() + timedelta(days=60)
-                            supabase.table("users_data").insert({"email": reg_email, "ngay_het_han": str(ngay_het_han)}).execute()
-                            
-                            st.success("🎉 Đăng ký thành công! Bạn được cấp 60 ngày dùng thử. Một email xác nhận đã được gửi đến hòm thư của bạn. Vui lòng kiểm tra và bấm vào link xác nhận để kích hoạt tài khoản trước khi đăng nhập.")
-                            st.info("💡 Lưu ý: Nếu không thấy email, bạn hãy kiểm tra trong mục Thư rác (Spam) nhé!")
+                            user = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                            res = supabase.table("users_data").select("ngay_het_han").eq("email", email).execute()
+                            if len(res.data) > 0:
+                                han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
+                                hom_nay = date.today()
+                                                            
+                                if hom_nay <= han_dung:
+                                    st.session_state["logged_in"] = True
+                                    st.session_state["email"] = email
+                                    st.session_state["han_dung"] = han_dung
+                                    st.rerun() 
+                                else:
+                                    st.error(f"⚠️ Tài khoản hết hạn: {han_dung.strftime('%d/%m/%Y')}.")
+                                    st.markdown(f"""
+                                        <a href="https://zalo.me/84937177439" target="_blank" style="text-decoration: none;">
+                                            <div style="width:100%; background-color:#0068ff; color:white; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">
+                                                💬 Liên hệ Zalo gia hạn (Admin)
+                                            </div>
+                                        </a>
+                                    """, unsafe_allow_html=True)
+                                    st.stop()
+                            else:
+                                st.error("Không tìm thấy gói cước.")
                         except Exception as e:
-                            st.error(f"Lỗi đăng ký (Có thể email này đã tồn tại): {str(e)}")
-        
-        return False # Trả về False để đóng chặt cửa, không cho chạy phần code trộn đề
+                            st.error("❌ Sai email hoặc mật khẩu!")
 
-    else:
-        # Nếu đã đăng nhập thành công -> Hiển thị thông tin ở góc trái
-        st.sidebar.success(f"👤 User: {st.session_state['email']}\n\n⏳ Hạn dùng: {st.session_state['han_dung'].strftime('%d/%m/%Y')}")
-        if st.sidebar.button("🚪 Đăng xuất"):
-            st.session_state["logged_in"] = False
-            st.rerun()
-        return True
+            with tab2:
+                with st.form("register_form"):
+                    reg_email = st.text_input("Nhập Email")
+                    reg_password = st.text_input("Mật khẩu (>6 ký tự)", type="password")
+                    reg_confirm = st.text_input("Nhập lại", type="password")
+                    submit_reg = st.form_submit_button("Đăng ký", use_container_width=True)
+                    
+                    if submit_reg:
+                        if reg_password != reg_confirm:
+                            st.error("❌ Mật khẩu không khớp!")
+                        elif len(reg_password) < 6:
+                            st.error("❌ Mật khẩu quá ngắn!")
+                        else:
+                            try:
+                                new_user = supabase.auth.sign_up({"email": reg_email, "password": reg_password})
+                                ngay_het_han = date.today() + timedelta(days=60)
+                                supabase.table("users_data").insert({"email": reg_email, "ngay_het_han": str(ngay_het_han)}).execute()
+                                st.success("🎉 Đăng ký thành công!")
+                                st.warning("⚠️ Mở Gmail (cả hộp Spam) bấm link xác nhận!")
+                            except Exception as e:
+                                st.error("Lỗi đăng ký (Email đã tồn tại).")
+            return False
+
+        else:
+            # GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP (Hiện ở cột phải)
+            st.success(f"👤 {st.session_state['email']}")
+            st.warning(f"⏳ Hạn dùng: {st.session_state['han_dung'].strftime('%d/%m/%Y')}")
+            if st.button("🚪 Đăng xuất", use_container_width=True):
+                st.session_state["logged_in"] = False
+                st.rerun()
+            return True
 # ==========================================================
 # BẢNG ĐIỀU KHIỂN DÀNH RIÊNG CHO GIÁM ĐỐC (ADMIN)
 # ==========================================================
