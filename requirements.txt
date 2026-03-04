@@ -4,4 +4,4 @@ python-docx
 supabase
 qrcode
 Pillow
-openpyxl
+streamlit-cookies-controller
