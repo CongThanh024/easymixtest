@@ -5,3 +5,4 @@ supabase
 qrcode
 Pillow
 streamlit-cookies-controller
+openpyxl
