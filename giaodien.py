@@ -16,8 +16,8 @@ def khoi_tao_session_state():
         'header_namhoc': '', 
         'header_mon': '', 
         'header_thoigian': '',
-        'footer_gt1': 'Giám thị 1',  # Giữ nguyên giá trị của phần kết thúc
-        'footer_gt2': 'Giám thị 2'   # Giữ nguyên giá trị của phần kết thúc
+        'footer_gt1': 'Giám thị 1',
+        'footer_gt2': 'Giám thị 2'
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -32,17 +32,15 @@ def hien_thi_sidebar(supabase=None):
         st.toggle("📖 Bật/Tắt Cẩm nang Hướng dẫn", key="show_guide")
         st.divider()
 
-        # --- CẤU HÌNH CỐT LÕI (Bản 25/2) ---
+        # --- 1. CẤU HÌNH ---
         st.header("1. CẤU HÌNH")
         
-        # Chọn môn
         loai_mon_input = st.radio(
             "Chọn Môn Thi:",
             options=["Môn KHTN/KHXH (Toán, Hóa...)", "Môn Tiếng Anh", "Môn Đánh Giá Năng Lực"],
             index=0
         )
         
-        # Xác định mã môn nội bộ
         if "KHTN" in loai_mon_input:
             config['loai_mon'] = 'MON_KHAC'
         elif "Tiếng Anh" in loai_mon_input:
@@ -50,12 +48,10 @@ def hien_thi_sidebar(supabase=None):
         else:
             config['loai_mon'] = 'DGNL'
 
-        # Số lượng đề
         c1, c2 = st.columns(2)
         with c1:
             config['so_luong_de'] = st.number_input("Số đề:", min_value=1, max_value=99, value=4)
         
-        # Cách sinh mã đề
         che_do_ma = st.radio("Cách sinh Mã đề:", ["Bắt đầu từ...", "Ngẫu nhiên"])
         if che_do_ma == "Bắt đầu từ...":
             config['ma_de_start'] = st.number_input("Mã bắt đầu:", value=101)
@@ -66,14 +62,13 @@ def hien_thi_sidebar(supabase=None):
 
         st.divider()
 
-        # --- TIÊU ĐỀ & TRÌNH BÀY (ĐÃ NÂNG CẤP CHỮ CHÌM & CHỐNG LẶP) ---
+        # --- 2. TRÌNH BÀY ĐỀ THI ---
         st.header("2. TRÌNH BÀY ĐỀ THI")
         
-        config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True)
+        config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True, key="luu_tuy_chon_header")
         if config['co_header']:
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở GD và ĐT', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên ngắn gọn!*")
             
-            # Giao diện chữ chìm hướng dẫn siêu chi tiết
             so_in = st.text_input("Tên Sở (Chỉ nhập tên Tỉnh/TP):", key="header_so", placeholder="VD: HÀ NỘI hoặc TP HỒ CHÍ MINH")
             truong_in = st.text_input("Tên Trường (Chỉ nhập tên):", key="header_truong", placeholder="VD: CHUYÊN KHTN")
             to_in = st.text_input("Tổ Chuyên Môn (Chỉ nhập tên):", key="header_to", placeholder="VD: TOÁN - TIN")
@@ -82,7 +77,6 @@ def hien_thi_sidebar(supabase=None):
             mon_in = st.text_input("Môn Thi (Chỉ nhập tên môn):", key="header_mon", placeholder="VD: TOÁN 12")
             thoigian_in = st.text_input("Thời gian (Chỉ nhập số phút):", key="header_thoigian", placeholder="VD: 90")
             
-            # NÚT LƯU ĐÁM MÂY
             if st.button("💾 Lưu làm mặc định cho tài khoản này", use_container_width=True):
                 if supabase and "email" in st.session_state:
                     du_lieu_luu = {
@@ -96,52 +90,47 @@ def hien_thi_sidebar(supabase=None):
                     except Exception as e:
                         st.error(f"Lỗi lưu Đám mây: {e}")
 
-            # BỘ LỌC CHỐNG LẶP TỪ THÔNG MINH
+            # --- BỘ LỌC CHỐNG LẶP TỪ THÔNG MINH ---
             val_so = f"SỞ GD VÀ ĐT {so_in}" if so_in else ""
-            if val_so:
-                val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
+            if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
                 
             val_truong = f"TRƯỜNG THPT {truong_in}" if truong_in else ""
-            if val_truong:
-                val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT")
+            if val_truong: val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT")
                 
             val_to = f"TỔ {to_in}" if to_in else ""
-            if val_to:
-                val_to = val_to.replace("TỔ TỔ", "TỔ")
+            if val_to: val_to = val_to.replace("TỔ TỔ", "TỔ")
                 
             val_namhoc = f"NĂM HỌC: {namhoc_in}" if namhoc_in else ""
-            if val_namhoc:
-                val_namhoc = val_namhoc.replace("NĂM HỌC: NĂM HỌC:", "NĂM HỌC:").replace("NĂM HỌC: NĂM HỌC", "NĂM HỌC:")
+            if val_namhoc: val_namhoc = val_namhoc.replace("NĂM HỌC: NĂM HỌC:", "NĂM HỌC:").replace("NĂM HỌC: NĂM HỌC", "NĂM HỌC:")
                 
             val_mon = f"MÔN {mon_in}" if mon_in else ""
-            if val_mon:
-                val_mon = val_mon.replace("MÔN MÔN", "MÔN")
+            if val_mon: val_mon = val_mon.replace("MÔN MÔN", "MÔN")
 
-            # Khớp 100% với xuat_file_word.py
+            # --- ĐỐI CHIẾU CHÌA KHÓA CHÍNH XÁC 100% VỚI XUAT_FILE_WORD.PY ---
             config['header_data'] = {
                 'so': val_so,
                 'truong': val_truong,
-                'to_chuyen_mon': val_to,
-                'ky_thi': kythi_in,
-                'nam_hoc': val_namhoc,
+                'to_chuyen_mon': val_to,    # Chìa khóa chính xác
+                'ky_thi': kythi_in,         # Chìa khóa chính xác
+                'nam_hoc': val_namhoc,      # Chìa khóa chính xác
                 'mon': val_mon, 
-                'thoi_gian': thoigian_in
+                'thoi_gian': thoigian_in    # Chìa khóa chính xác
             }
 
-        # --- FOOTER (Giữ nguyên gốc 25/2) ---
-        config['co_footer'] = st.checkbox("Gắn Tiêu Đề Kết Thúc (Chữ ký)", value=True)
+        # --- FOOTER ---
+        config['co_footer'] = st.checkbox("Gắn Tiêu Đề Kết Thúc (Chữ ký)", value=True, key="luu_tuy_chon_footer")
         if config['co_footer']:
             c_f1, c_f2 = st.columns(2)
-            st.session_state.footer_gt1 = c_f1.text_input("Chức danh 1:", value=st.session_state.footer_gt1)
-            st.session_state.footer_gt2 = c_f2.text_input("Chức danh 2:", value=st.session_state.footer_gt2)
+            gt1_in = c_f1.text_input("Chức danh 1:", key='footer_gt1', placeholder="VD: Giám thị 1")
+            gt2_in = c_f2.text_input("Chức danh 2:", key='footer_gt2', placeholder="VD: Giám thị 2")
             config['footer_data'] = {
-                'gt1': st.session_state.footer_gt1,
-                'gt2': st.session_state.footer_gt2
+                'gt1': gt1_in,
+                'gt2': gt2_in
             }
 
         st.divider()
         
-        # --- CHÈN ẢNH PHIẾU (Giữ nguyên gốc 25/2) ---
+        # --- CHÈN ẢNH PHIẾU ---
         st.header("3. CHÈN PHIẾU LÀM BÀI")
         with st.expander("Tải lên mẫu Phiếu"):
             config['img_phieu_to'] = st.file_uploader("Phiếu Tô (Trang 1):", type=['png', 'jpg', 'jpeg'], key="img1")
@@ -150,7 +139,7 @@ def hien_thi_sidebar(supabase=None):
 
         st.divider()
 
-        # --- CÀI ĐẶT TRỘN (Giữ nguyên gốc 25/2) ---
+        # --- CÀI ĐẶT TRỘN ---
         st.header("4. CÀI ĐẶT TRỘN")
         config['tron_nhom'] = st.checkbox("Trộn nhóm (Cluster)", value=False, help="Hoán vị vị trí các nhóm câu hỏi")
         
@@ -160,7 +149,7 @@ def hien_thi_sidebar(supabase=None):
         disable_ds = (config['loai_mon'] != 'MON_KHAC') 
         config['tron_ds'] = c_t2.checkbox("Đảo Đ/S", value=(not disable_ds), disabled=disable_ds)
 
-        # --- ĐIỂM SỐ (Giữ nguyên gốc 25/2) ---
+        # --- ĐIỂM SỐ ---
         if config['loai_mon'] == 'MON_KHAC':
             st.divider()
             st.header("5. THANG ĐIỂM")
@@ -171,7 +160,7 @@ def hien_thi_sidebar(supabase=None):
                 config['diem_p3'] = d1.number_input("P.III:", min_value=0.0, value=2.0, step=0.1, format="%.2f")
                 config['diem_p4'] = d2.number_input("P.IV:", min_value=0.0, value=0.0, step=0.1, format="%.2f")
 
-        # --- XUẤT EXCEL (Giữ nguyên gốc 25/2) ---
+        # --- XUẤT EXCEL ---
         st.divider()
         st.header("6. XUẤT ĐÁP ÁN EXCEL")
         
@@ -191,7 +180,6 @@ def hien_thi_sidebar(supabase=None):
     return config
 
 def hien_thi_man_hinh_chinh(config):
-    """Hiển thị màn hình chính."""
     st.title("📂 TẢI ĐỀ GỐC & XỬ LÝ")
     
     mon_lbl = "KHTN/KHXH"
