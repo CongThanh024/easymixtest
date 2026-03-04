@@ -150,7 +150,8 @@ def check_auth(supabase: Client):
                                         for k, v in cau_hinh.items():
                                             st.session_state[k] = v
                                     
-                                    if remember: cookies.set("auto_email", email)
+                                    # [ĐÃ SỬA] Ép trình duyệt lưu Cookie sống tròn 1 năm (31536000 giây)
+                                    if remember: cookies.set("auto_email", email, max_age=31536000)
                                     else: cookies.remove("auto_email")
                                         
                                     st.rerun() 

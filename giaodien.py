@@ -72,14 +72,24 @@ def hien_thi_sidebar(supabase=None):
             val_thoigian = f"Thời gian làm bài: {thoigian_in} phút" if thoigian_in else ""
             
             # [QUAN TRỌNG] Lưu cấu hình chuẩn xác để truyền sang file Word
+            # --- CHUẨN HÓA DỮ LIỆU ĐỂ BƠM SANG XUAT_FILE_WORD.PY ---
+            val_so = f"SỞ GD VÀ ĐT {so_in}".replace("SỞ GD VÀ ĐT SỞ", "SỞ").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD") if so_in else ""
+            val_truong = f"TRƯỜNG THPT {truong_in}".replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG").replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT") if truong_in else ""
+            val_to = f"TỔ {to_in}".replace("TỔ TỔ", "TỔ") if to_in else ""
+            val_namhoc = f"NĂM HỌC: {namhoc_in}".replace("NĂM HỌC: NĂM HỌC", "NĂM HỌC") if namhoc_in else ""
+            
+            # Sửa lỗi lặp từ Môn: Chỉ truyền "MÔN TOÁN", bên xuat_file_word sẽ tự thêm "Môn: "
+            val_mon = f"MÔN {mon_in}".replace("MÔN MÔN", "MÔN") if mon_in else ""
+            
+            # [QUAN TRỌNG NHẤT] - ĐỔI TÊN CHÌA KHÓA CHO KHỚP 100% VỚI BÊN WORD
             config['header_data'] = {
                 'so': val_so,
                 'truong': val_truong,
-                'to': val_to,
-                'kythi': kythi_in, # Kỳ thi giữ nguyên những gì người dùng gõ
-                'namhoc': val_namhoc,
+                'to_chuyen_mon': val_to,    # Chữa bệnh mất Tổ
+                'ky_thi': kythi_in,         # Chữa bệnh mất Kỳ thi
+                'nam_hoc': val_namhoc,      # Chữa bệnh mất Năm học
                 'mon': val_mon,
-                'thoigian': val_thoigian
+                'thoi_gian': thoigian_in    # Chữa bệnh mất Thời gian
             }
 
         st.divider()
