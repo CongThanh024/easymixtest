@@ -95,7 +95,9 @@ def hien_thi_sidebar(supabase=None):
             if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
                 
             val_truong = f"TRƯỜNG THPT {truong_in}" if truong_in else ""
-            if val_truong: val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT")
+            if val_truong: 
+                # [ĐÃ SỬA] Bắt thêm lỗi lặp chữ "THPT THPT"
+                val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT").replace("THPT THPT", "THPT")
                 
             val_to = f"TỔ {to_in}" if to_in else ""
             if val_to: val_to = val_to.replace("TỔ TỔ", "TỔ")
@@ -103,7 +105,8 @@ def hien_thi_sidebar(supabase=None):
             val_namhoc = f"NĂM HỌC: {namhoc_in}" if namhoc_in else ""
             if val_namhoc: val_namhoc = val_namhoc.replace("NĂM HỌC: NĂM HỌC:", "NĂM HỌC:").replace("NĂM HỌC: NĂM HỌC", "NĂM HỌC:")
                 
-            val_mon = f"MÔN {mon_in}" if mon_in else ""
+            # [ĐÃ SỬA] KHÔNG bọc chữ MÔN nữa vì xuat_file_word.py đã có sẵn chữ "Môn: " rồi!
+            val_mon = mon_in if mon_in else ""
             if val_mon: val_mon = val_mon.replace("MÔN MÔN", "MÔN")
 
             # --- ĐỐI CHIẾU CHÌA KHÓA CHÍNH XÁC 100% VỚI XUAT_FILE_WORD.PY ---
@@ -155,10 +158,10 @@ def hien_thi_sidebar(supabase=None):
             st.header("5. THANG ĐIỂM")
             with st.expander("Nhập tổng điểm từng phần"):
                 d1, d2 = st.columns(2)
-                config['diem_p1'] = d1.number_input("P.I:", min_value=0.0, value=4.0, step=0.1, format="%.2f")
-                config['diem_p2'] = d2.number_input("P.II:", min_value=0.0, value=4.0, step=0.1, format="%.2f")
-                config['diem_p3'] = d1.number_input("P.III:", min_value=0.0, value=2.0, step=0.1, format="%.2f")
-                config['diem_p4'] = d2.number_input("P.IV:", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                config['diem_p1'] = d1.number_input("P.I: TN", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                config['diem_p2'] = d2.number_input("P.II: Đ/S", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                config['diem_p3'] = d1.number_input("P.III: TLN", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                config['diem_p4'] = d2.number_input("P.IV: TL", min_value=0.0, value=0.0, step=0.1, format="%.2f")
 
         # --- XUẤT EXCEL ---
         st.divider()

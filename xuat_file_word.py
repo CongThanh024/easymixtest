@@ -221,9 +221,9 @@ def insert_header_and_student_info(doc, config, exam_id):
         tbl.columns[0].width, tbl.columns[1].width = Cm(8.0), Cm(10.96)
         
         c = tbl.cell(0,0); p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER; force_compact_p(p)
-        format_run(p.add_run(f"{hd.get('so','').upper()}\n"), size=11, color=COLOR_BLUE)
-        format_run(p.add_run(f"{hd.get('truong','').upper()}\n"), bold=True, size=11, color=COLOR_BLUE)
-        format_run(p.add_run(hd.get('to_chuyen_mon','').upper()), bold=True, size=11, color=COLOR_BLUE)
+        format_run(p.add_run(f"{hd.get('so','').upper()}\n"), size=12, color=COLOR_BLUE)
+        format_run(p.add_run(f"{hd.get('truong','').upper()}\n"), bold=True, size=12, color=COLOR_BLUE)
+        format_run(p.add_run(hd.get('to_chuyen_mon','').upper()), bold=True, size=12, color=COLOR_BLUE)
         
         c = tbl.cell(0,1); p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER; force_compact_p(p)
         format_run(p.add_run(f"{hd.get('ky_thi','').upper()}\n"), bold=True, size=12, color=COLOR_BLUE)
@@ -236,7 +236,7 @@ def insert_header_and_student_info(doc, config, exam_id):
         
         c = tbl.cell(1,1); p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER; force_compact_p(p)
         t_val = "".join(re.findall(r'\d+', str(hd.get('thoi_gian','')))) or "..."
-        p.add_run(f"Thời gian làm bài: {t_val} phút\n"); format_run(p.add_run("(Không kể thời gian phát đề)"), italic=True, size=11)
+        p.add_run(f"Thời gian làm bài: {t_val} phút\n"); format_run(p.add_run("(Không kể thời gian phát đề)"), italic=True, size=12)
         
         for r in tbl.rows:
             for cl in r.cells: 
