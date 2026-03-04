@@ -757,11 +757,12 @@ def generate_dapan_tonghop_av(doc_base, all_results, config):
                 tbl_qr.autofit = False
                 tbl_qr.columns[0].width = Cm(9.48); tbl_qr.columns[1].width = Cm(9.48)
                 
-                # Cấu hình bảng ẩn (xóa viền)
+                # Cấu hình bảng ẩn (xóa viền) - ĐÃ SỬA LỖI CHẾT FILE
                 for row in tbl_qr.rows:
                     for cell in row.cells:
                         tcPr = cell._element.get_or_add_tcPr(); tcB = OxmlElement('w:tcBorders')
-                        for b in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+                        # CHỈ DÙNG 4 CẠNH CHO Ô (CELL). Bỏ insideH và insideV
+                        for b in ['top', 'left', 'bottom', 'right']:
                             e = OxmlElement(f'w:{b}'); e.set(qn('w:val'), 'nil'); tcB.append(e)
                         tcPr.append(tcB)
 
