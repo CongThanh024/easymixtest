@@ -21,9 +21,8 @@ def hien_thi_sidebar(supabase=None):
     config = {}
 
     with st.sidebar:
-        # --- NÚT HƯỚNG DẪN ---
-        if st.button("📖 Xem Hướng dẫn trộn đề", use_container_width=True):
-            st.session_state["show_guide"] = not st.session_state["show_guide"]
+        # --- CÔNG TẮC HƯỚNG DẪN (Nhớ trạng thái, bấm 1 lần là ăn ngay) ---
+        st.toggle("📖 Bật/Tắt Cẩm nang Hướng dẫn", key="show_guide")
             
         st.divider()
 
@@ -47,48 +46,40 @@ def hien_thi_sidebar(supabase=None):
 
         st.divider()
 
-        # --- 2. TRÌNH BÀY ĐỀ THI (ĐÃ FIX TIỀN TỐ) ---
+        # --- TIÊU ĐỀ & TRÌNH BÀY ---
         st.header("2. TRÌNH BÀY ĐỀ THI")
         
         config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True, key="luu_tuy_chon_header")
         if config['co_header']:
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên!*")
             
-            so_in = st.text_input("Tên Sở:", key="h_so", placeholder="VD: TP HỒ CHÍ MINH")
-            truong_in = st.text_input("Tên Trường:", key="h_truong", placeholder="VD: TRẦN KHAI NGUYÊN")
-            to_in = st.text_input("Tên Tổ:", key="h_to", placeholder="VD: TOÁN - TIN")
-            kythi_in = st.text_input("Tên Kỳ thi:", key="h_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
-            namhoc_in = st.text_input("Năm học (Chỉ cần nhập số):", key="h_namhoc", placeholder="VD: 2025 - 2026")
-            mon_in = st.text_input("Tên Môn:", key="h_mon", placeholder="VD: TOÁN")
-            thoigian_in = st.text_input("Thời gian (Chỉ nhập số phút):", key="h_thoigian", placeholder="VD: 90")
+            # Lấy dữ liệu người dùng nhập
+            so_in = st.text_input("Tên Sở:", key="header_so", placeholder="VD: HÀ NỘI")
+            truong_in = st.text_input("Tên Trường:", key="header_truong", placeholder="VD: CHUYÊN KHTN")
+            to_in = st.text_input("Tổ Chuyên Môn:", key="header_to", placeholder="VD: TOÁN - TIN")
+            kythi_in = st.text_input("Kỳ Thi:", key="header_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
+            namhoc_in = st.text_input("Năm học (Chỉ cần nhập số):", key="header_namhoc", placeholder="VD: 2025 - 2026")
+            mon_in = st.text_input("Môn Thi:", key="header_mon", placeholder="VD: TOÁN 12")
+            thoigian_in = st.text_input("Thời gian (Chỉ nhập số):", key="header_thoigian", placeholder="VD: 90")
             
-            # --- [TÍNH NĂNG MỚI] NÚT LƯU LÊN ĐÁM MÂY ---
-            if st.button("💾 Lưu làm mặc định cho tài khoản này", use_container_width=True):
-                if supabase and "email" in st.session_state:
-                    du_lieu_luu = {
-                        'h_so': so_in, 'h_truong': truong_in, 'h_to': to_in,
-                        'h_kythi': kythi_in, 'h_namhoc': namhoc_in, 
-                        'h_mon': mon_in, 'h_thoigian': thoigian_in
-                    }
-                    try:
-                        # Ghi thẳng vào cột jsonb mà bạn vừa tạo
-                        supabase.table("users_data").update({"cau_hinh_mac_dinh": du_lieu_luu}).eq("email", st.session_state["email"]).execute()
-                        st.success("✅ Đã lưu cấu hình lên Đám mây!")
-                    except Exception as e:
-                        st.error(f"Lỗi lưu Đám mây: {e}")
-
-            # Logic nối chuỗi thông minh
-            val_so = f"SỞ GD VÀ ĐT {so_in}".replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD") if so_in else ""
-            val_truong = f"TRƯỜNG THPT {truong_in}".replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT") if truong_in else ""
+            # --- XỬ LÝ CHUỖI THÔNG MINH TRƯỚC KHI TRUYỀN VÀO WORD ---
+            # Cơ chế replace giúp chống lặp từ nếu Giám đốc lỡ tay gõ thừa chữ "Sở", "Trường"...
+            val_so = f"SỞ GD VÀ ĐT {so_in}".replace("SỞ GD VÀ ĐT SỞ", "SỞ").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD") if so_in else ""
+            val_truong = f"TRƯỜNG THPT {truong_in}".replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG").replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT") if truong_in else ""
             val_to = f"TỔ {to_in}".replace("TỔ TỔ", "TỔ") if to_in else ""
-            val_namhoc = f"NĂM HỌC: {namhoc_in}".replace("NĂM HỌC: NĂM HỌC:", "NĂM HỌC:") if namhoc_in else ""
+            val_namhoc = f"NĂM HỌC: {namhoc_in}".replace("NĂM HỌC: NĂM HỌC", "NĂM HỌC") if namhoc_in else ""
+            val_mon = f"MÔN {mon_in}".replace("MÔN MÔN", "MÔN") if mon_in else ""
             val_thoigian = f"Thời gian làm bài: {thoigian_in} phút" if thoigian_in else ""
-            val_mon = f"Môn: MÔN {mon_in}".replace("Môn: MÔN MÔN", "Môn: MÔN") if mon_in else ""
             
+            # [QUAN TRỌNG] Lưu cấu hình chuẩn xác để truyền sang file Word
             config['header_data'] = {
-                'so': val_so, 'truong': val_truong, 'to': val_to,
-                'kythi': kythi_in, 'namhoc': val_namhoc,
-                'mon': val_mon, 'thoigian': val_thoigian
+                'so': val_so,
+                'truong': val_truong,
+                'to': val_to,
+                'kythi': kythi_in, # Kỳ thi giữ nguyên những gì người dùng gõ
+                'namhoc': val_namhoc,
+                'mon': val_mon,
+                'thoigian': val_thoigian
             }
 
         st.divider()

@@ -72,7 +72,7 @@ def check_auth(supabase: Client):
             pass 
 
     # --- CHIA MẶT TIỀN 3 CỘT (CỘT GIỮA RỘNG) ---
-    col_trai, col_giua, col_phai = st.columns([0.6, 2.5, 1.2])
+    col_trai, col_giua, col_phai = st.columns([0.1, 3.5, 1.1])
     
     with col_trai:
         st.write("") 
