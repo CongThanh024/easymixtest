@@ -125,7 +125,7 @@ def check_auth(supabase: Client):
     with col_phai:
         if not st.session_state["logged_in"]:
             st.info("Vui lòng đăng nhập để sử dụng")
-            tab1, tab2 = st.tabs(["🔐 Đăng nhập", "📝 Đăng ký"])
+            tab1, tab2, tab3 = st.tabs(["🔐 Đăng nhập", "📝 Đăng ký", "🔑 Quên mật khẩu"])
             
             with tab1:
                 with st.form("login_form"):
@@ -184,6 +184,17 @@ def check_auth(supabase: Client):
                                 st.success("🎉 Đăng ký thành công!")
                             except Exception:
                                 st.error("Lỗi đăng ký (Email đã tồn tại).")
+            with tab3:
+                with st.form("reset_form"):
+                    reset_email = st.text_input("Nhập Email tài khoản của bạn")
+                    submit_reset = st.form_submit_button("Gửi link khôi phục mật khẩu", use_container_width=True)
+                    if submit_reset:
+                        try:
+                            # Lệnh gọi Đám mây tự động gửi mail
+                            supabase.auth.reset_password_email(reset_email)
+                            st.success("✅ Đã gửi link khôi phục! Vui lòng kiểm tra Hộp thư đến (hoặc Thư rác/Spam) của bạn.")
+                        except Exception as e:
+                            st.error("❌ Không tìm thấy Email này trên hệ thống!")                    
             return False
         else:
             st.success(f"👤 {st.session_state['email']}")
