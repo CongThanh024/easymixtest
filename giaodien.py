@@ -16,7 +16,7 @@ def khoi_tao_session_state():
         if key not in st.session_state:
             st.session_state[key] = val
 
-def hien_thi_sidebar():
+def hien_thi_sidebar(supabase=None):
     khoi_tao_session_state()
     config = {}
 
@@ -54,7 +54,6 @@ def hien_thi_sidebar():
         if config['co_header']:
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên!*")
             
-            # Giao diện nhập ngắn gọn, dùng key để lưu vết lịch sử gõ
             so_in = st.text_input("Tên Sở:", key="h_so", placeholder="VD: TP HỒ CHÍ MINH")
             truong_in = st.text_input("Tên Trường:", key="h_truong", placeholder="VD: TRẦN KHAI NGUYÊN")
             to_in = st.text_input("Tên Tổ:", key="h_to", placeholder="VD: TOÁN - TIN")
@@ -63,8 +62,22 @@ def hien_thi_sidebar():
             mon_in = st.text_input("Tên Môn:", key="h_mon", placeholder="VD: TOÁN")
             thoigian_in = st.text_input("Thời gian (Chỉ nhập số phút):", key="h_thoigian", placeholder="VD: 90")
             
-            # [cite_start]Logic thông minh: Tự động ghép nối chuỗi chuẩn bị cho file Word [cite: 1, 2, 3]
-            # (Thêm logic replace để lỡ Giám đốc có quên gõ dư chữ "SỞ" thì máy tự xóa đi)
+            # --- [TÍNH NĂNG MỚI] NÚT LƯU LÊN ĐÁM MÂY ---
+            if st.button("💾 Lưu làm mặc định cho tài khoản này", use_container_width=True):
+                if supabase and "email" in st.session_state:
+                    du_lieu_luu = {
+                        'h_so': so_in, 'h_truong': truong_in, 'h_to': to_in,
+                        'h_kythi': kythi_in, 'h_namhoc': namhoc_in, 
+                        'h_mon': mon_in, 'h_thoigian': thoigian_in
+                    }
+                    try:
+                        # Ghi thẳng vào cột jsonb mà bạn vừa tạo
+                        supabase.table("users_data").update({"cau_hinh_mac_dinh": du_lieu_luu}).eq("email", st.session_state["email"]).execute()
+                        st.success("✅ Đã lưu cấu hình lên Đám mây!")
+                    except Exception as e:
+                        st.error(f"Lỗi lưu Đám mây: {e}")
+
+            # Logic nối chuỗi thông minh
             val_so = f"SỞ GD VÀ ĐT {so_in}".replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD") if so_in else ""
             val_truong = f"TRƯỜNG THPT {truong_in}".replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT") if truong_in else ""
             val_to = f"TỔ {to_in}".replace("TỔ TỔ", "TỔ") if to_in else ""
@@ -73,13 +86,9 @@ def hien_thi_sidebar():
             val_mon = f"Môn: MÔN {mon_in}".replace("Môn: MÔN MÔN", "Môn: MÔN") if mon_in else ""
             
             config['header_data'] = {
-                'so': val_so,
-                'truong': val_truong,
-                'to': val_to,
-                'kythi': kythi_in, # Kỳ thi giữ nguyên
-                'namhoc': val_namhoc,
-                'mon': val_mon,
-                'thoigian': val_thoigian
+                'so': val_so, 'truong': val_truong, 'to': val_to,
+                'kythi': kythi_in, 'namhoc': val_namhoc,
+                'mon': val_mon, 'thoigian': val_thoigian
             }
 
         st.divider()

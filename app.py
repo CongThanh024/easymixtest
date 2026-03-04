@@ -14,6 +14,7 @@ import thuat_toan_tron_av
 import xuat_file_word      
 import xuat_file_word_av   
 from copy import deepcopy
+from streamlit_cookies_controller import CookieController
 
 # [SỬA TÊN TAB TRÌNH DUYỆT]
 st.set_page_config(page_title="App trộn đề chuyên nghiệp", page_icon="🛠", layout="wide")
@@ -43,15 +44,38 @@ def cleanup_folder(folder_path):
 # HỆ THỐNG ĐĂNG NHẬP VÀ QUẢN LÝ NGƯỜI DÙNG
 # ==========================================================
 def check_auth(supabase: Client):
-    # Khởi tạo biến chống lỗi
     if "logged_in" not in st.session_state: st.session_state["logged_in"] = False
     if "show_guide" not in st.session_state: st.session_state["show_guide"] = False
 
-    # --- CHIA MẶT TIỀN 3 CỘT (CỘT GIỮA CỰC RỘNG: tỷ lệ 0.6 : 2.5 : 1.2) ---
+    # --- KHỞI TẠO BỘ QUẢN LÝ COOKIE ---
+    from streamlit_cookies_controller import CookieController
+    cookies = CookieController()
+    auto_email = cookies.get("auto_email")
+
+    # --- TỰ ĐỘNG ĐĂNG NHẬP (BỎ QUA FORM) NẾU CÓ COOKIE ---
+    if not st.session_state["logged_in"] and auto_email:
+        try:
+            res = supabase.table("users_data").select("ngay_het_han, cau_hinh_mac_dinh").eq("email", auto_email).execute()
+            if len(res.data) > 0:
+                han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
+                if date.today() <= han_dung:
+                    st.session_state["logged_in"] = True
+                    st.session_state["email"] = auto_email
+                    st.session_state["han_dung"] = han_dung
+                    
+                    # KÉO CẤU HÌNH ĐÃ LƯU VỀ APP
+                    cau_hinh = res.data[0].get("cau_hinh_mac_dinh")
+                    if cau_hinh:
+                        for k, v in cau_hinh.items():
+                            st.session_state[k] = v
+        except Exception:
+            pass 
+
+    # --- CHIA MẶT TIỀN 3 CỘT (CỘT GIỮA RỘNG) ---
     col_trai, col_giua, col_phai = st.columns([0.6, 2.5, 1.2])
     
     with col_trai:
-        st.write("") # Cột trái để trống tạo độ thoáng
+        st.write("") 
 
     # CỘT GIỮA: LOGO & BẢNG HƯỚNG DẪN MỞ RỘNG
     with col_giua:
@@ -60,28 +84,42 @@ def check_auth(supabase: Client):
         except:
             st.markdown("<h2 style='text-align: center; color: #1E88E5;'>EASY MIX TEST</h2>", unsafe_allow_html=True)
             
-        st.markdown(
-            """
-            <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <p style="font-family: 'Dancing Script', cursive; font-size: 30px; 
-                          background: -webkit-linear-gradient(45deg, #0077b6, #d90429); 
-                          -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-                          margin: 0; font-weight: bold; line-height: 1.2;">
-                    Developed by<br>Đoàn Công Thành
-                </p>
-            </div>
-            """, unsafe_allow_html=True
-        )
+        # [TÍNH NĂNG MỚI] - CHỈ HIỆN TÊN TÁC GIẢ KHI ĐÃ ĐĂNG NHẬP, TRÊN 1 DÒNG
+        if st.session_state["logged_in"]:
+            st.markdown(
+                """
+                <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <p style="font-family: 'Dancing Script', cursive; font-size: 30px; 
+                              background: -webkit-linear-gradient(45deg, #0077b6, #d90429); 
+                              -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+                              margin: 0; font-weight: bold; line-height: 1.2;">
+                        Developed by Công Thành
+                    </p>
+                </div>
+                """, unsafe_allow_html=True
+            )
         
-        if st.session_state["show_guide"]:
-            # Bảng hướng dẫn giờ đây đã rất rộng rãi do col_giua chiếm phần lớn màn hình
+        if st.session_state.get("show_guide"):
             with st.container(height=650, border=True):
                 st.markdown("<h4 style='text-align:center;'>📖 CẨM NANG SỬ DỤNG EASY MIX TEST</h4>", unsafe_allow_html=True)
-                try:
-                    st.image("huongdan_sudung.png", use_container_width=True)
-                except FileNotFoundError:
-                    st.info("⏳ Đang chờ tải file ảnh 'huongdan_sudung.png'...")
+                
+                import os
+                found_any = False
+                
+                # Quét tự động từ trang 1 đến trang 10 với đúng tên file và đuôi .png của bạn
+                for i in range(1, 11):
+                    file_name = f"duongdan_sudung_Page{i}.png"
+                    if os.path.exists(file_name):
+                        try:
+                            # In sát nhau không khoảng cách
+                            st.image(file_name, use_container_width=True)
+                            found_any = True
+                        except Exception:
+                            pass
+                
+                if not found_any:
+                    st.info("⏳ Đang chờ hệ thống cập nhật ảnh hướng dẫn (duongdan_sudung_Page1.png)...")
 
     # CỘT PHẢI: ĐĂNG NHẬP
     with col_phai:
@@ -91,24 +129,30 @@ def check_auth(supabase: Client):
             
             with tab1:
                 with st.form("login_form"):
-                    email = st.text_input("Email của bạn")
+                    email = st.text_input("Email của bạn", value=auto_email if auto_email else "")
                     password = st.text_input("Mật khẩu", type="password")
-                    
-                    # Nút tick Ghi nhớ đăng nhập
-                    st.checkbox("Lưu thông tin đăng nhập trên trình duyệt này", value=True)
-                    
+                    remember = st.checkbox("Lưu đăng nhập (Lần sau tự động vào)", value=True)
                     submit_login = st.form_submit_button("Đăng nhập", use_container_width=True)
                     
                     if submit_login:
                         try:
                             user = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                            res = supabase.table("users_data").select("ngay_het_han").eq("email", email).execute()
+                            res = supabase.table("users_data").select("ngay_het_han, cau_hinh_mac_dinh").eq("email", email).execute()
                             if len(res.data) > 0:
                                 han_dung = date.fromisoformat(res.data[0]["ngay_het_han"])
                                 if date.today() <= han_dung:
                                     st.session_state["logged_in"] = True
                                     st.session_state["email"] = email
                                     st.session_state["han_dung"] = han_dung
+                                    
+                                    cau_hinh = res.data[0].get("cau_hinh_mac_dinh")
+                                    if cau_hinh:
+                                        for k, v in cau_hinh.items():
+                                            st.session_state[k] = v
+                                    
+                                    if remember: cookies.set("auto_email", email)
+                                    else: cookies.remove("auto_email")
+                                        
                                     st.rerun() 
                                 else:
                                     st.error(f"⚠️ Tài khoản hết hạn: {han_dung.strftime('%d/%m/%Y')}.")
@@ -140,6 +184,7 @@ def check_auth(supabase: Client):
             st.warning(f"⏳ Hạn dùng: {st.session_state['han_dung'].strftime('%d/%m/%Y')}")
             if st.button("🚪 Đăng xuất", use_container_width=True):
                 st.session_state["logged_in"] = False
+                cookies.remove("auto_email")
                 st.rerun()
             return True
 # ==========================================================
@@ -202,7 +247,7 @@ def main():
         hien_thi_trang_admin(supabase)
         return  # <--- LỆNH CHỐT CHẶN: Ép cỗ máy dừng ở đây, KHÔNG HIỆN giao diện trộn đề ở dưới nữa!
         
-    config = giaodien.hien_thi_sidebar()
+    config = giaodien.hien_thi_sidebar(supabase)
     inputs = giaodien.hien_thi_man_hinh_chinh(config)
 
     # Dán ở đây, thẳng hàng với chữ 'inputs' ở trên
