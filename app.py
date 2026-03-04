@@ -129,8 +129,12 @@ def check_auth(supabase: Client):
             
             with tab1:
                 with st.form("login_form"):
-                    email = st.text_input("Email của bạn", value=auto_email if auto_email else "")
-                    password = st.text_input("Mật khẩu", type="password")
+                    # [ĐÃ SỬA] Thêm autocomplete="username" để ép Chrome lưu Email
+                    email = st.text_input("Email của bạn", value=auto_email if auto_email else "", autocomplete="username")
+                    
+                    # [ĐÃ SỬA] Thêm autocomplete="current-password" để ép Chrome lưu Mật khẩu
+                    password = st.text_input("Mật khẩu", type="password", autocomplete="current-password")
+                    
                     remember = st.checkbox("Lưu đăng nhập (Lần sau tự động vào)", value=True)
                     submit_login = st.form_submit_button("Đăng nhập", use_container_width=True)
                     
@@ -150,7 +154,6 @@ def check_auth(supabase: Client):
                                         for k, v in cau_hinh.items():
                                             st.session_state[k] = v
                                     
-                                    # [ĐÃ SỬA] Ép trình duyệt lưu Cookie sống tròn 1 năm (31536000 giây)
                                     if remember: cookies.set("auto_email", email, max_age=31536000)
                                     else: cookies.remove("auto_email")
                                         
@@ -165,9 +168,11 @@ def check_auth(supabase: Client):
 
             with tab2:
                 with st.form("register_form"):
-                    reg_email = st.text_input("Nhập Email")
-                    reg_password = st.text_input("Mật khẩu (>6 ký tự)", type="password")
-                    reg_confirm = st.text_input("Nhập lại", type="password")
+                    # [ĐÃ SỬA] Đăng ký cũng cần lưu autofill
+                    reg_email = st.text_input("Nhập Email", autocomplete="username")
+                    reg_password = st.text_input("Mật khẩu (>6 ký tự)", type="password", autocomplete="new-password")
+                    reg_confirm = st.text_input("Nhập lại", type="password", autocomplete="new-password")
+                    
                     submit_reg = st.form_submit_button("Đăng ký", use_container_width=True)
                     if submit_reg:
                         if reg_password != reg_confirm: st.error("❌ Mật khẩu không khớp!")
@@ -254,10 +259,12 @@ def main():
     # Dán ở đây, thẳng hàng với chữ 'inputs' ở trên
     with st.expander("📖 HƯỚNG DẪN SỬ DỤNG NHANH"):
         st.info("""
-        1. **Chuẩn bị:** Đề gốc đúng định dạng Câu 1, Câu 2...
-        2. **Tải lên:** Chọn file Word (.docx) từ máy.
-        3. **Cấu hình:** Chọn số mã đề cần trộn.
-        4. **Kết quả:** Tải file nén .zip về máy.
+        1. **Chuẩn bị:** Đề gốc đúng định dạng, nếu thắc mắc, gạt nút cẩm nang để xem hướng dẫn.
+        2. **Tải lên:** Chọn file Word đề gốc (.docx) từ máy.
+        3. **Chuẩn hóa báo lỗi:** Nếu báo lỗi, tải đề chuẩn hóa về xem và sửa lỗi trên đề gốc. Nếu có lỗi mà trộn thì câu lỗi bị loại.
+        4. **Cấu hình:** Chọn môn trộn,chọn số mã đề cần trộn, kiểm tra các tùy chọn đảo phương án, câu, nhóm, tiêu đề bài thi và tiêu đề kết thúc.
+        5. **Kết quả:** Tải file nén .zip về máy.
+        6. **Lưu định dạng trộn:** Bấm nút lưu định dạng trộn để lần trộn sau đỡ tốn công thiết lập.
         """)
 
     # 1. LOGIC CHUẨN HÓA (ĐÃ PHÂN 2 LUỒNG SẠCH/DƠ)
