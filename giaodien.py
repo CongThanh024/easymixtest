@@ -56,7 +56,7 @@ def hien_thi_sidebar(supabase=None):
         
         che_do_ma = st.radio("Cách sinh Mã đề:", ["Bắt đầu từ...", "Ngẫu nhiên"], key="ui_che_do_ma")
         if che_do_ma == "Bắt đầu từ...":
-            config['ma_de_start'] = st.number_input("Mã bắt đầu:", key="ui_ma_bat_dau")
+            config['ma_de_start'] = st.number_input("Mã bắt đầu:", min_value=1, step=1, key="ui_ma_bat_dau")
             config['kieu_ma_de'] = 'SEQUENTIAL'
         else:
             kieu_ngau_nhien = st.selectbox("Độ dài mã:", ["3 chữ số (VD: 142)", "4 chữ số (VD: 7924)"], key="ui_kieu_ngau_nhien")
