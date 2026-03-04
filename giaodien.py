@@ -4,20 +4,22 @@ import os
 # --- LƯU Ý: KHÔNG ĐƯỢC TỰ Ý THAY ĐỔI GIAO DIỆN NÀY NẾU KHÔNG CÓ YÊU CẦU ---
 
 def khoi_tao_session_state():
-    """Khởi tạo trạng thái. Để trống Header để hiện chữ chìm, giữ nguyên chữ ký Footer."""
+    """Khởi tạo trạng thái nhớ TOÀN BỘ UI cho tài khoản đăng nhập."""
     if "show_guide" not in st.session_state:
         st.session_state["show_guide"] = False
 
     defaults = {
-        'header_so': '', 
-        'header_truong': '', 
-        'header_to': '', 
-        'header_kythi': '', 
-        'header_namhoc': '', 
-        'header_mon': '', 
-        'header_thoigian': '',
-        'footer_gt1': 'Giám thị 1',
-        'footer_gt2': 'Giám thị 2'
+        'header_so': '', 'header_truong': '', 'header_to': '', 
+        'header_kythi': '', 'header_namhoc': '', 'header_mon': '', 'header_thoigian': '',
+        'footer_gt1': 'Giám thị 1', 'footer_gt2': 'Giám thị 2',
+        
+        # --- BỘ NHỚ CẤU HÌNH (THÊM MỚI) ---
+        'ui_loai_mon': "Môn KHTN/KHXH (Toán, Hóa...)", 'ui_so_de': 4,
+        'ui_che_do_ma': "Bắt đầu từ...", 'ui_ma_bat_dau': 101, 'ui_kieu_ngau_nhien': "3 chữ số (VD: 142)",
+        'ui_co_header': True, 'ui_co_footer': True, 'ui_tron_nhom': False,
+        'ui_tron_mcq': True, 'ui_tron_ds': True,
+        'ui_diem_p1': 0.0, 'ui_diem_p2': 0.0, 'ui_diem_p3': 0.0, 'ui_diem_p4': 0.0,
+        'ui_excel_mode': "Dọc nối tiếp (Mã | Câu | Đáp án)"
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -38,7 +40,7 @@ def hien_thi_sidebar(supabase=None):
         loai_mon_input = st.radio(
             "Chọn Môn Thi:",
             options=["Môn KHTN/KHXH (Toán, Hóa...)", "Môn Tiếng Anh", "Môn Đánh Giá Năng Lực"],
-            index=0
+            key="ui_loai_mon"
         )
         
         if "KHTN" in loai_mon_input:
@@ -50,14 +52,14 @@ def hien_thi_sidebar(supabase=None):
 
         c1, c2 = st.columns(2)
         with c1:
-            config['so_luong_de'] = st.number_input("Số đề:", min_value=1, max_value=99, value=4)
+            config['so_luong_de'] = st.number_input("Số đề:", min_value=1, max_value=99, key="ui_so_de")
         
-        che_do_ma = st.radio("Cách sinh Mã đề:", ["Bắt đầu từ...", "Ngẫu nhiên"])
+        che_do_ma = st.radio("Cách sinh Mã đề:", ["Bắt đầu từ...", "Ngẫu nhiên"], key="ui_che_do_ma")
         if che_do_ma == "Bắt đầu từ...":
-            config['ma_de_start'] = st.number_input("Mã bắt đầu:", value=101)
+            config['ma_de_start'] = st.number_input("Mã bắt đầu:", key="ui_ma_bat_dau")
             config['kieu_ma_de'] = 'SEQUENTIAL'
         else:
-            kieu_ngau_nhien = st.selectbox("Độ dài mã:", ["3 chữ số (VD: 142)", "4 chữ số (VD: 7924)"])
+            kieu_ngau_nhien = st.selectbox("Độ dài mã:", ["3 chữ số (VD: 142)", "4 chữ số (VD: 7924)"], key="ui_kieu_ngau_nhien")
             config['kieu_ma_de'] = 'RANDOM_4' if "4 chữ số" in kieu_ngau_nhien else 'RANDOM_3'
 
         st.divider()
@@ -65,7 +67,7 @@ def hien_thi_sidebar(supabase=None):
         # --- 2. TRÌNH BÀY ĐỀ THI ---
         st.header("2. TRÌNH BÀY ĐỀ THI")
         
-        config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", value=True, key="luu_tuy_chon_header")
+        config['co_header'] = st.checkbox("Gắn Tiêu Đề (Sở/Trường...)", key="ui_co_header")
         if config['co_header']:
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở GD và ĐT', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên ngắn gọn!*")
             
@@ -77,19 +79,6 @@ def hien_thi_sidebar(supabase=None):
             mon_in = st.text_input("Môn Thi (Chỉ nhập tên môn):", key="header_mon", placeholder="VD: TOÁN 12")
             thoigian_in = st.text_input("Thời gian (Chỉ nhập số phút):", key="header_thoigian", placeholder="VD: 90")
             
-            if st.button("💾 Lưu làm mặc định cho tài khoản này", use_container_width=True):
-                if supabase and "email" in st.session_state:
-                    du_lieu_luu = {
-                        'header_so': so_in, 'header_truong': truong_in, 'header_to': to_in,
-                        'header_kythi': kythi_in, 'header_namhoc': namhoc_in, 
-                        'header_mon': mon_in, 'header_thoigian': thoigian_in
-                    }
-                    try:
-                        supabase.table("users_data").update({"cau_hinh_mac_dinh": du_lieu_luu}).eq("email", st.session_state["email"]).execute()
-                        st.success("✅ Đã lưu cấu hình lên Đám mây!")
-                    except Exception as e:
-                        st.error(f"Lỗi lưu Đám mây: {e}")
-
             # --- BỘ LỌC CHỐNG LẶP TỪ THÔNG MINH ---
             val_so = f"SỞ GD VÀ ĐT {so_in}" if so_in else ""
             if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
@@ -121,7 +110,7 @@ def hien_thi_sidebar(supabase=None):
             }
 
         # --- FOOTER ---
-        config['co_footer'] = st.checkbox("Gắn Tiêu Đề Kết Thúc (Chữ ký)", value=True, key="luu_tuy_chon_footer")
+        config['co_footer'] = st.checkbox("Gắn Tiêu Đề Kết Thúc (Chữ ký)", key="ui_co_footer")
         if config['co_footer']:
             c_f1, c_f2 = st.columns(2)
             gt1_in = c_f1.text_input("Chức danh 1:", key='footer_gt1', placeholder="VD: Giám thị 1")
@@ -144,13 +133,13 @@ def hien_thi_sidebar(supabase=None):
 
         # --- CÀI ĐẶT TRỘN ---
         st.header("4. CÀI ĐẶT TRỘN")
-        config['tron_nhom'] = st.checkbox("Trộn nhóm (Cluster)", value=False, help="Hoán vị vị trí các nhóm câu hỏi")
+        config['tron_nhom'] = st.checkbox("Trộn nhóm (Cluster)", help="Hoán vị vị trí các nhóm câu hỏi", key="ui_tron_nhom")
         
         c_t1, c_t2 = st.columns(2)
-        config['tron_mcq'] = c_t1.checkbox("Đảo A,B,C,D", value=True)
+        config['tron_mcq'] = c_t1.checkbox("Đảo A,B,C,D", key="ui_tron_mcq")
         
         disable_ds = (config['loai_mon'] != 'MON_KHAC') 
-        config['tron_ds'] = c_t2.checkbox("Đảo Đ/S", value=(not disable_ds), disabled=disable_ds)
+        config['tron_ds'] = c_t2.checkbox("Đảo Đ/S", disabled=disable_ds, key="ui_tron_ds")
 
         # --- ĐIỂM SỐ ---
         if config['loai_mon'] == 'MON_KHAC':
@@ -158,10 +147,10 @@ def hien_thi_sidebar(supabase=None):
             st.header("5. THANG ĐIỂM")
             with st.expander("Nhập tổng điểm từng phần"):
                 d1, d2 = st.columns(2)
-                config['diem_p1'] = d1.number_input("P.I: TN", min_value=0.0, value=0.0, step=0.1, format="%.2f")
-                config['diem_p2'] = d2.number_input("P.II: Đ/S", min_value=0.0, value=0.0, step=0.1, format="%.2f")
-                config['diem_p3'] = d1.number_input("P.III: TLN", min_value=0.0, value=0.0, step=0.1, format="%.2f")
-                config['diem_p4'] = d2.number_input("P.IV: TL", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                config['diem_p1'] = d1.number_input("P.I: TN", min_value=0.0, step=0.1, format="%.2f", key="ui_diem_p1")
+                config['diem_p2'] = d2.number_input("P.II: Đ/S", min_value=0.0, step=0.1, format="%.2f", key="ui_diem_p2")
+                config['diem_p3'] = d1.number_input("P.III: TLN", min_value=0.0, step=0.1, format="%.2f", key="ui_diem_p3")
+                config['diem_p4'] = d2.number_input("P.IV: TL", min_value=0.0, step=0.1, format="%.2f", key="ui_diem_p4")
 
         # --- XUẤT EXCEL ---
         st.divider()
@@ -174,12 +163,31 @@ def hien_thi_sidebar(supabase=None):
                 "Ngang nối tiếp (Dải ruy-băng)": 3,
                 "Ngang song song (Mã | 1 | 2 | 3)": 4
             }
-            chon_ex = st.selectbox("Chọn định dạng Excel:", list(excel_opts.keys()), index=0)
+            chon_ex = st.selectbox("Chọn định dạng Excel:", list(excel_opts.keys()), key="ui_excel_mode")
             config['excel_mode'] = excel_opts[chon_ex]
         else:
             st.info("Môn Tiếng Anh & ĐGNL được thiết lập mặc định xuất Excel kiểu: Dọc nối tiếp (Mã | Câu | Đáp án) để tránh lệch dữ liệu do xóc tự do.")
             config['excel_mode'] = 1
-
+            
+        # --- 7. ĐỒNG BỘ ĐÁM MÂY TỔNG ---
+        st.divider()
+        st.header("7. ĐỒNG BỘ ĐÁM MÂY")
+        st.caption("Lưu lại toàn bộ các tùy chọn từ Mục 1 đến Mục 6 để lần sau đăng nhập không phải chọn lại.")
+        
+        if st.button("💾 LƯU MỌI CÀI ĐẶT LÀM MẶC ĐỊNH", use_container_width=True, type="primary"):
+            if supabase and "email" in st.session_state:
+                keys_to_save = [
+                    'header_so', 'header_truong', 'header_to', 'header_kythi', 'header_namhoc', 'header_mon', 'header_thoigian',
+                    'footer_gt1', 'footer_gt2', 'ui_loai_mon', 'ui_so_de', 'ui_che_do_ma', 'ui_ma_bat_dau', 'ui_kieu_ngau_nhien',
+                    'ui_co_header', 'ui_co_footer', 'ui_tron_nhom', 'ui_tron_mcq', 'ui_tron_ds',
+                    'ui_diem_p1', 'ui_diem_p2', 'ui_diem_p3', 'ui_diem_p4', 'ui_excel_mode'
+                ]
+                du_lieu_luu = {k: st.session_state[k] for k in keys_to_save if k in st.session_state}
+                try:
+                    supabase.table("users_data").update({"cau_hinh_mac_dinh": du_lieu_luu}).eq("email", st.session_state["email"]).execute()
+                    st.success("✅ Đã lưu TOÀN BỘ cấu hình lên Đám mây!")
+                except Exception as e:
+                    st.error(f"Lỗi lưu Đám mây: {e}")
     return config
 
 def hien_thi_man_hinh_chinh(config):
