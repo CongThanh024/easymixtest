@@ -270,12 +270,13 @@ def main():
     # Dán ở đây, thẳng hàng với chữ 'inputs' ở trên
     with st.expander("📖 HƯỚNG DẪN SỬ DỤNG NHANH"):
         st.info("""
-        1. **Chuẩn bị:** Đề gốc đúng định dạng, nếu thắc mắc, gạt nút cẩm nang để xem hướng dẫn.
+        0. **CHÚ Ý QUAN TRỌNG:** Không để hình ảnh dạng group, phải cắt và dán chúng, TẤT CẢ hình ảnh phải ở chế độ inline with text.
+        1. **Chuẩn bị:** Đề gốc đúng định dạng, nếu thắc mắc, gạt nút Bật/Tắt cẩm nang hướng dẫn để xem hướng dẫn.
         2. **Tải lên:** Chọn file Word đề gốc (.docx) từ máy.
         3. **Chuẩn hóa báo lỗi:** Nếu báo lỗi, tải đề chuẩn hóa về xem và sửa lỗi trên đề gốc. Nếu có lỗi mà trộn thì câu lỗi bị loại.
         4. **Cấu hình:** Chọn môn trộn,chọn số mã đề cần trộn, kiểm tra các tùy chọn đảo phương án, câu, nhóm, tiêu đề bài thi và tiêu đề kết thúc.
         5. **Kết quả:** Tải file nén .zip về máy.
-        6. **Lưu định dạng trộn:** Bấm nút lưu định dạng trộn để lần trộn sau đỡ tốn công thiết lập.
+        6. **Lưu cài đặt trộn:** Bấm nút lưu định dạng trộn (mục 7) để lần trộn sau đỡ tốn công thiết lập.
         """)
 
     # 1. LOGIC CHUẨN HÓA (ĐÃ PHÂN 2 LUỒNG SẠCH/DƠ)
