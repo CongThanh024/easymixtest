@@ -276,7 +276,8 @@ def main():
         3. **Chuẩn hóa báo lỗi:** Nếu báo lỗi, tải đề chuẩn hóa về xem và sửa lỗi trên đề gốc. Nếu có lỗi mà trộn thì câu lỗi bị loại.
         4. **Cấu hình:** Chọn môn trộn, chọn số mã đề cần trộn, kiểm tra các tùy chọn đảo phương án, câu, nhóm, tiêu đề bài thi và tiêu đề kết thúc.
         5. **Kết quả:** Tải file nén .zip về máy.
-        6. **Lưu cài đặt trộn:** Bấm nút lưu định dạng trộn (mục 7) để lần trộn sau đỡ tốn công thiết lập.
+        6. **Đánh tổng số trang tự động:** (Đề có...trang), hãy bấm Trl+p để nhìn thấy số này.
+        7. **Lưu cài đặt trộn:** Bấm nút lưu định dạng trộn (mục 7) để lần trộn sau đỡ tốn công thiết lập.
         """)
 
     # 1. LOGIC CHUẨN HÓA (ĐÃ PHÂN 2 LUỒNG SẠCH/DƠ)
