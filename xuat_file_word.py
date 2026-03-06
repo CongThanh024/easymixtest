@@ -521,8 +521,49 @@ def generate_loigiai_file(doc, items, config, exam_id):
 def generate_dapan_tonghop(doc_base, all_results, config):
     if not all_results: return
     
-    # 1. SETUP CƠ BẢN
+    # =========================================================================
+    # ĐOẠN 1: SETUP VÀ BẢO TỒN TỰ LUẬN (THUẬT TOÁN GIÁM ĐỐC)
+    # =========================================================================
+    def local_strict_detect_temp(key_val):
+        k_up = str(key_val).strip().upper()
+        if k_up == 'TL' or 'TỰ LUẬN' in k_up: return 'TL'
+        clean_tn = k_up.replace(".", "").replace(")", "").strip()
+        if clean_tn in ['A', 'B', 'C', 'D']: return 'TN'
+        clean_ds = re.sub(r'[^TFĐS]', '', k_up)
+        if len(clean_ds) == 4: return 'DS'
+        return 'TLN'
+
+    body = doc_base.element.body
+    all_blocks = list(body)
+    
+    # Đếm chính xác số lượng câu Tự luận
+    num_tl = 0
+    for item in all_results[0]['items']:
+        if item['type'] == 'QUESTION' and local_strict_detect_temp(item.get('key', '')) == 'TL':
+            num_tl += 1
+            
+    question_tables = []
+    for block in all_blocks:
+        if block.tag.endswith('tbl'):
+            tbl = Table(block, doc_base)
+            try:
+                if "CÂU" in tbl.rows[0].cells[0].text.strip().upper() and len(tbl.rows[0].cells) >= 2:
+                    question_tables.append(block)
+            except: pass
+
+    tl_blocks = []
+    # Cất giữ nguyên khối các Bảng Tự luận (Giữ nguyên Căn cước ID gốc)
+    if num_tl > 0 and len(question_tables) >= num_tl:
+        first_tl_tbl_block = question_tables[-num_tl]
+        idx_start_tl = all_blocks.index(first_tl_tbl_block)
+        for b in all_blocks[idx_start_tl:]:
+            if not b.tag.endswith('sectPr'):
+                tl_blocks.append(b)
+                body.remove(b)
+
+    # Dọn dẹp mặt bằng để vẽ Bảng QR, TN, DS...
     clear_body_preserve_section(doc_base)
+
     style = doc_base.styles['Normal']; font = style.font
     font.name = FONT_NAME; font.size = Pt(FONT_SIZE)
 
@@ -729,12 +770,55 @@ def generate_dapan_tonghop(doc_base, all_results, config):
                 add_score_text(" điểm.")
 
         if q_type == 'TL':
-            for i, item in enumerate(ref_items):
-                render_cell_content(doc_base, item['stem'], first_line_prefix=f"Câu {i+1}. ", first_line_color=COLOR_BLUE)
-                if item.get('solution'):
-                    p_sol = doc_base.add_paragraph()
-                    format_run(p_sol.add_run("Lời giải"), bold=True, italic=True, color=COLOR_PURPLE)
-                    render_cell_content(doc_base, item['solution'])
+            # =========================================================================
+            # ĐOẠN 2: TRẢ LẠI TỰ LUẬN VÀ PHÁ BẢNG
+            # =========================================================================
+            # Trả khối Tự luận về đáy file (Ngay trên định dạng trang sectPr)
+            sect_pr = doc_base.element.body.find(qn('w:sectPr'))
+            for b in tl_blocks:
+                if sect_pr is not None:
+                    sect_pr.addprevious(b)
+                else:
+                    doc_base.element.body.append(b)
+                
+            # Duyệt qua các khối vừa trả lại để đập vỡ khung bảng
+            cau_idx = 1
+            for block in tl_blocks:
+                if block.tag.endswith('tbl'):
+                    tbl = Table(block, doc_base)
+                    try:
+                        text0 = tbl.rows[0].cells[0].text.strip().upper()
+                        
+                        # Xử lý ô Đề Bài
+                        if "CÂU" in text0 and len(tbl.rows[0].cells) >= 2:
+                            p_title = doc_base.add_paragraph()
+                            format_run(p_title.add_run(f"Câu {cau_idx}. "), bold=True, color=COLOR_BLUE)
+                            block.addprevious(p_title._element)
+                            cau_idx += 1
+                            
+                            c_stem = tbl.rows[0].cells[1]
+                            for child in list(c_stem._element):
+                                if child.tag.endswith('p') or child.tag.endswith('tbl'):
+                                    block.addprevious(child)
+                            block.getparent().remove(block) # Xóa khung
+                            
+                        # Xử lý ô Lời Giải
+                        elif "LỜI GIẢI" in text0 or "KEY" in text0 or "ĐÁP ÁN" in text0:
+                            p_sol = doc_base.add_paragraph()
+                            format_run(p_sol.add_run("Lời giải"), bold=True, italic=True, color=COLOR_PURPLE)
+                            block.addprevious(p_sol._element)
+                            
+                            c_sol = tbl.rows[0].cells[1] if len(tbl.rows[0].cells) >= 2 else tbl.rows[0].cells[0]
+                            for child in list(c_sol._element):
+                                if child.tag.endswith('p') or child.tag.endswith('tbl'):
+                                    block.addprevious(child)
+                            block.getparent().remove(block) # Xóa khung
+                            
+                        # Dọn rác các Bảng chứa phương án A,B,C,D bị kẹt lại
+                        elif text0 in ['A', 'B', 'C', 'D', 'A.', 'B.', 'C.', 'D.']:
+                            block.getparent().remove(block)
+                    except Exception as e:
+                        pass
             continue
 
         chunk_size = 15 if q_type == 'TN' else (5 if q_type == 'DS' else 8)
