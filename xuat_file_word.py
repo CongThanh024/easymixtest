@@ -787,37 +787,55 @@ def generate_dapan_tonghop(doc_base, all_results, config):
                 if block.tag.endswith('tbl'):
                     tbl = Table(block, doc_base)
                     try:
-                        text0 = tbl.rows[0].cells[0].text.strip().upper()
+                        # [SỬA LỖI 1]: Quét TẤT CẢ các hàng trong bảng để không sót Lời Giải
+                        for row in tbl.rows:
+                            if len(row.cells) == 0: continue
+                            text0 = row.cells[0].text.strip().upper()
+                            
+                            # --- XỬ LÝ Ô ĐỀ BÀI ---
+                            if "CÂU" in text0 and len(row.cells) >= 2:
+                                c_stem = row.cells[1]
+                                
+                                # [SỬA LỖI 2]: Nhét chữ "Câu X. " chui vào cùng dòng với nội dung
+                                if c_stem.paragraphs:
+                                    p0 = c_stem.paragraphs[0]
+                                    r_new = p0.add_run(f"Câu {cau_idx}. ")
+                                    format_run(r_new, bold=True, color=COLOR_BLUE)
+                                    
+                                    # Lách luật XML: Tìm vị trí an toàn để nhét chữ lên đầu mà không làm hỏng file
+                                    insert_idx = 0
+                                    for i, child in enumerate(p0._element):
+                                        if child.tag.endswith('pPr'):
+                                            insert_idx = i + 1
+                                            break
+                                    p0._element.insert(insert_idx, r_new._element)
+                                else:
+                                    p_title = doc_base.add_paragraph()
+                                    format_run(p_title.add_run(f"Câu {cau_idx}. "), bold=True, color=COLOR_BLUE)
+                                    block.addprevious(p_title._element)
+                                    
+                                cau_idx += 1
+                                
+                                # Kéo nội dung ra ngoài
+                                for child in list(c_stem._element):
+                                    if child.tag.endswith('p') or child.tag.endswith('tbl'):
+                                        block.addprevious(child)
+                                        
+                            # --- XỬ LÝ Ô LỜI GIẢI ---
+                            elif "LỜI GIẢI" in text0 or "KEY" in text0 or "ĐÁP ÁN" in text0:
+                                p_sol = doc_base.add_paragraph()
+                                p_sol.alignment = WD_ALIGN_PARAGRAPH.CENTER # Canh giữa, bỏ in nghiêng
+                                format_run(p_sol.add_run("Lời giải"), bold=True, color=COLOR_PURPLE)
+                                block.addprevious(p_sol._element)
+                                
+                                c_sol = row.cells[1] if len(row.cells) >= 2 else row.cells[0]
+                                for child in list(c_sol._element):
+                                    if child.tag.endswith('p') or child.tag.endswith('tbl'):
+                                        block.addprevious(child)
+                                        
+                        # Đập vỡ khung bảng SAU KHI đã vét sạch Đề và Lời Giải
+                        block.getparent().remove(block) 
                         
-                        # Xử lý ô Đề Bài
-                        if "CÂU" in text0 and len(tbl.rows[0].cells) >= 2:
-                            p_title = doc_base.add_paragraph()
-                            format_run(p_title.add_run(f"Câu {cau_idx}. "), bold=True, color=COLOR_BLUE)
-                            block.addprevious(p_title._element)
-                            cau_idx += 1
-                            
-                            c_stem = tbl.rows[0].cells[1]
-                            for child in list(c_stem._element):
-                                if child.tag.endswith('p') or child.tag.endswith('tbl'):
-                                    block.addprevious(child)
-                            block.getparent().remove(block) # Xóa khung
-                            
-                        # Xử lý ô Lời Giải
-                        elif "LỜI GIẢI" in text0 or "KEY" in text0 or "ĐÁP ÁN" in text0:
-                            p_sol = doc_base.add_paragraph()
-                            p_sol.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                            format_run(p_sol.add_run("Lời giải"), bold=True, color=COLOR_PURPLE)
-                            block.addprevious(p_sol._element)
-                            
-                            c_sol = tbl.rows[0].cells[1] if len(tbl.rows[0].cells) >= 2 else tbl.rows[0].cells[0]
-                            for child in list(c_sol._element):
-                                if child.tag.endswith('p') or child.tag.endswith('tbl'):
-                                    block.addprevious(child)
-                            block.getparent().remove(block) # Xóa khung
-                            
-                        # Dọn rác các Bảng chứa phương án A,B,C,D bị kẹt lại
-                        elif text0 in ['A', 'B', 'C', 'D', 'A.', 'B.', 'C.', 'D.']:
-                            block.getparent().remove(block)
                     except Exception as e:
                         pass
             continue
