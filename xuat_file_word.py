@@ -805,7 +805,8 @@ def generate_dapan_tonghop(doc_base, all_results, config):
                         # Xử lý ô Lời Giải
                         elif "LỜI GIẢI" in text0 or "KEY" in text0 or "ĐÁP ÁN" in text0:
                             p_sol = doc_base.add_paragraph()
-                            format_run(p_sol.add_run("Lời giải"), bold=True, italic=True, color=COLOR_PURPLE)
+                            p_sol.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            format_run(p_sol.add_run("Lời giải"), bold=True, color=COLOR_PURPLE)
                             block.addprevious(p_sol._element)
                             
                             c_sol = tbl.rows[0].cells[1] if len(tbl.rows[0].cells) >= 2 else tbl.rows[0].cells[0]
