@@ -136,8 +136,14 @@ def add_field(p, code, italic=False):
 
 def set_narrow_layout(doc):
     for s in doc.sections:
+        # 1. Ép khổ giấy A4 và 4 lề chính 
         s.top_margin = s.bottom_margin = s.left_margin = s.right_margin = Cm(1.02)
         s.page_width, s.page_height = Cm(21), Cm(29.7)
+        
+        # 2. ÉP LAYOUT HEADER/FOOTER (Cách lề 0.6cm và tắt Khác biệt trang đầu)
+        s.different_first_page_header_footer = False
+        s.header_distance = Cm(0.6)
+        s.footer_distance = Cm(0.6)
 
 def safe_insert_element(doc, element): doc.element.body.insert(-1, deepcopy(element))
 
