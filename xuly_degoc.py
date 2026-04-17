@@ -23,8 +23,8 @@ STD_TEMPLATE = {
 
 # [BỘ LỌC CHUẨN MỰC]
 REGEX_CAU = re.compile(r"^[\s\u00A0]*([@!]?[\s\u00A0]*Câu[\s\u00A0]+(\d+))([:.])", re.IGNORECASE) # Bắt buộc có dấu . hoặc :
-REGEX_PA_ANCHOR = re.compile(r"(?<![a-zA-Z0-9])([A-D])\.") 
-REGEX_PA_DS = re.compile(r"(?<![a-zA-Z0-9\(])([a-d])\)") # Chặn đứng (a)
+REGEX_PA_ANCHOR = re.compile(r"(?<!\w)([A-D])\.") 
+REGEX_PA_DS = re.compile(r"(?<![\w\(])([a-d])\)") # Chặn đứng (a)
 REGEX_KEY_LINE = re.compile(r"^[\s\u00A0]*(LỜI GIẢI|HƯỚNG DẪN GIẢI)[\s\u00A0]*[:\.]?[\s\u00A0]*", re.IGNORECASE) # Chỉ 2 từ khóa
 REGEX_TRASH = re.compile(r"(<Tự luận>|<TỰ LUẬN>|<key[^>]*>)", re.IGNORECASE)
 REGEX_OLD_CHOICE = re.compile(r"^\s*(Chọn|Đáp án|Phương án|Chon)\s+([A-D])\s*[.:]?\s*$", re.IGNORECASE)
