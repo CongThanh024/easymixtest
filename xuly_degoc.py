@@ -294,6 +294,7 @@ class XuLyDeChuanHoa:
     def _tien_xu_ly_shift_enter(self):
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
+        from copy import deepcopy
         import re
 
         # LUẬT ÉP CỨNG KHÔNG KHOAN NHƯỢNG: 
@@ -301,12 +302,12 @@ class XuLyDeChuanHoa:
         regex_marker = re.compile(r"^\s*(A\.|B\.|C\.|D\.|a\)|b\)|c\)|d\))")
 
         def get_text_after(node, length=5):
-            # Hàm nội bộ dò tìm chữ cái phía sau Shift+Enter mà không phá XML
             text = ""
             current = node.getnext()
             while current is not None and len(text) < length:
-                for t in current.xpath('.//w:t'):
-                    if t.text: text += t.text
+                # Dùng .iter() thay cho .xpath() để né lỗi mù Namespace của máy chủ Linux (Streamlit)
+                for child in current.iter():
+                    if child.tag.endswith('}t') and child.text: text += child.text
                 if len(text) >= length: break
                 current = current.getnext()
 
@@ -314,32 +315,35 @@ class XuLyDeChuanHoa:
             while parent is not None and len(text) < length:
                 sibling = parent.getnext()
                 while sibling is not None and len(text) < length:
-                    for t in sibling.xpath('.//w:t'):
-                        if t.text: text += t.text
+                    for child in sibling.iter():
+                        if child.tag.endswith('}t') and child.text: text += child.text
                     if len(text) >= length: break
                     sibling = sibling.getnext()
                 parent = parent.getparent()
-                if parent is None or parent.tag.endswith('p'): break 
+                if parent is None or parent.tag.endswith('}p'): break 
             return text
 
         def check_previous_is_special(br_node):
-            # Hàm nội bộ lùi lại 1 bước xem có đụng MathType/Hình ảnh không
             current = br_node.getprevious()
             while current is not None:
-                t_tags = current.xpath('.//w:t')
-                if any(t.text and t.text.strip() for t in t_tags): return False
-                if current.xpath('.//w:drawing') or current.xpath('.//w:pict') or current.xpath('.//w:object'): return True
+                has_text = False
+                for child in current.iter():
+                    if child.tag.endswith('}t') and child.text and child.text.strip(): has_text = True
+                    if child.tag.endswith('}drawing') or child.tag.endswith('}pict') or child.tag.endswith('}object'): return True
+                if has_text: return False
                 current = current.getprevious()
 
             parent_r = br_node.getparent()
-            if parent_r is not None and parent_r.tag.endswith('r'):
+            if parent_r is not None and parent_r.tag.endswith('}r'):
                 prev_r = parent_r.getprevious()
                 while prev_r is not None:
                     tag = prev_r.tag.split('}')[-1]
                     if tag in ['oMath', 'oMathPara']: return True
-                    t_tags = prev_r.xpath('.//w:t')
-                    if any(t.text and t.text.strip() for t in t_tags): return False
-                    if prev_r.xpath('.//w:drawing') or prev_r.xpath('.//w:pict') or prev_r.xpath('.//w:object'): return True
+                    has_text = False
+                    for child in prev_r.iter():
+                        if child.tag.endswith('}t') and child.text and child.text.strip(): has_text = True
+                        if child.tag.endswith('}drawing') or child.tag.endswith('}pict') or child.tag.endswith('}object'): return True
+                    if has_text: return False
                     prev_r = prev_r.getprevious()
             return False
 
@@ -347,11 +351,14 @@ class XuLyDeChuanHoa:
         i = 0
         while i < len(body):
             p_el = body[i]
-            if not p_el.tag.endswith('p'):
+            if not p_el.tag.endswith('}p'):
                 i += 1; continue
 
-            # Tìm tất cả thẻ <w:br> (Shift+Enter) trong đoạn
-            br_list = p_el.xpath('.//w:br')
+            # Tìm thẻ br bằng .iter() tuyệt đối chính xác trên mọi môi trường
+            br_list = []
+            for node in p_el.iter():
+                if node.tag.endswith('}br'): br_list.append(node)
+                    
             if not br_list:
                 i += 1; continue
 
@@ -362,9 +369,9 @@ class XuLyDeChuanHoa:
                 if regex_marker.match(next_text):
                     is_special = check_previous_is_special(br)
                     parent_r = br.getparent()
-                    if parent_r is None or not parent_r.tag.endswith('r'): continue
+                    if parent_r is None or not parent_r.tag.endswith('}r'): continue
 
-                    # 1. BƠM VÙNG ĐỆM AN TOÀN (Dấu Chấm) nếu đằng trước là MathType
+                    # 1. BƠM VÙNG ĐỆM AN TOÀN (Dấu Chấm) nếu đằng trước là MathType/Ảnh
                     if is_special:
                         new_r = OxmlElement('w:r'); new_t = OxmlElement('w:t'); new_t.text = "."
                         new_r.append(new_t)
@@ -376,7 +383,9 @@ class XuLyDeChuanHoa:
                     
                     curr_node = br.getnext()
                     while curr_node is not None:
-                        next_node = curr_node.getnext(); r_after.append(curr_node); curr_node = next_node
+                        next_node = curr_node.getnext()
+                        r_after.append(curr_node)
+                        curr_node = next_node
                         
                     # TIÊU DIỆT Shift+Enter
                     br.getparent().remove(br)
@@ -388,7 +397,9 @@ class XuLyDeChuanHoa:
                         
                     curr_sibling = parent_r.getnext()
                     while curr_sibling is not None:
-                        next_sibling = curr_sibling.getnext(); new_p.append(curr_sibling); curr_sibling = next_sibling
+                        next_sibling = curr_sibling.getnext()
+                        new_p.append(curr_sibling)
+                        curr_sibling = next_sibling
 
                     # Lắp ráp đoạn mới vào file Word
                     p_el.addnext(new_p)
