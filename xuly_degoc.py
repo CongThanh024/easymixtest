@@ -291,7 +291,111 @@ class XuLyDeChuanHoa:
                     try: cell.paragraphs[i]._element.getparent().remove(cell.paragraphs[i]._element)
                     except: pass
         self._trim_cell_safe(cell, REGEX_KEY_LINE)
+    def _tien_xu_ly_shift_enter(self):
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        import re
 
+        # LUẬT ÉP CỨNG KHÔNG KHOAN NHƯỢNG: 
+        # Bắt buộc in hoa A., B., C., D. hoặc in thường a), b), c), d)
+        regex_marker = re.compile(r"^\s*(A\.|B\.|C\.|D\.|a\)|b\)|c\)|d\))")
+
+        def get_text_after(node, length=5):
+            # Hàm nội bộ dò tìm chữ cái phía sau Shift+Enter mà không phá XML
+            text = ""
+            current = node.getnext()
+            while current is not None and len(text) < length:
+                for t in current.xpath('.//w:t'):
+                    if t.text: text += t.text
+                if len(text) >= length: break
+                current = current.getnext()
+
+            parent = node.getparent()
+            while parent is not None and len(text) < length:
+                sibling = parent.getnext()
+                while sibling is not None and len(text) < length:
+                    for t in sibling.xpath('.//w:t'):
+                        if t.text: text += t.text
+                    if len(text) >= length: break
+                    sibling = sibling.getnext()
+                parent = parent.getparent()
+                if parent is None or parent.tag.endswith('p'): break 
+            return text
+
+        def check_previous_is_special(br_node):
+            # Hàm nội bộ lùi lại 1 bước xem có đụng MathType/Hình ảnh không
+            current = br_node.getprevious()
+            while current is not None:
+                t_tags = current.xpath('.//w:t')
+                if any(t.text and t.text.strip() for t in t_tags): return False
+                if current.xpath('.//w:drawing') or current.xpath('.//w:pict') or current.xpath('.//w:object'): return True
+                current = current.getprevious()
+
+            parent_r = br_node.getparent()
+            if parent_r is not None and parent_r.tag.endswith('r'):
+                prev_r = parent_r.getprevious()
+                while prev_r is not None:
+                    tag = prev_r.tag.split('}')[-1]
+                    if tag in ['oMath', 'oMathPara']: return True
+                    t_tags = prev_r.xpath('.//w:t')
+                    if any(t.text and t.text.strip() for t in t_tags): return False
+                    if prev_r.xpath('.//w:drawing') or prev_r.xpath('.//w:pict') or prev_r.xpath('.//w:object'): return True
+                    prev_r = prev_r.getprevious()
+            return False
+
+        body = self.doc._body._element
+        i = 0
+        while i < len(body):
+            p_el = body[i]
+            if not p_el.tag.endswith('p'):
+                i += 1; continue
+
+            # Tìm tất cả thẻ <w:br> (Shift+Enter) trong đoạn
+            br_list = p_el.xpath('.//w:br')
+            if not br_list:
+                i += 1; continue
+
+            split_happened = False
+            for br in br_list:
+                next_text = get_text_after(br, 5)
+                # KHI PHÁT HIỆN TARGET THỎA ĐIỀU KIỆN ÉP CỨNG
+                if regex_marker.match(next_text):
+                    is_special = check_previous_is_special(br)
+                    parent_r = br.getparent()
+                    if parent_r is None or not parent_r.tag.endswith('r'): continue
+
+                    # 1. BƠM VÙNG ĐỆM AN TOÀN (Dấu Chấm) nếu đằng trước là MathType
+                    if is_special:
+                        new_r = OxmlElement('w:r'); new_t = OxmlElement('w:t'); new_t.text = "."
+                        new_r.append(new_t)
+                        parent_r.addprevious(new_r)
+
+                    # 2. PHẪU THUẬT: Tách Run và Dời XML
+                    r_after = OxmlElement('w:r')
+                    if parent_r.find(qn('w:rPr')) is not None: r_after.append(deepcopy(parent_r.find(qn('w:rPr'))))
+                    
+                    curr_node = br.getnext()
+                    while curr_node is not None:
+                        next_node = curr_node.getnext(); r_after.append(curr_node); curr_node = next_node
+                        
+                    # TIÊU DIỆT Shift+Enter
+                    br.getparent().remove(br)
+
+                    # 3. CHUYỂN SANG ĐOẠN ENTER MỚI
+                    new_p = OxmlElement('w:p')
+                    if p_el.find(qn('w:pPr')) is not None: new_p.append(deepcopy(p_el.find(qn('w:pPr'))))
+                    if len(r_after) > (1 if r_after.find(qn('w:rPr')) is not None else 0): new_p.append(r_after)
+                        
+                    curr_sibling = parent_r.getnext()
+                    while curr_sibling is not None:
+                        next_sibling = curr_sibling.getnext(); new_p.append(curr_sibling); curr_sibling = next_sibling
+
+                    # Lắp ráp đoạn mới vào file Word
+                    p_el.addnext(new_p)
+                    split_happened = True
+                    break # Reset vòng lặp để soi tiếp đoạn mới
+
+            if not split_happened: i += 1
 
 # ============================================================================
 # 🔄 KHU VỰC 2: BỘ NHẬN DẠNG & ĐÓNG HỘP (ĐÃ CẬP NHẬT ĐẾM MỐC TRƯỚC KHI CẮT)
@@ -875,6 +979,9 @@ class XuLyDeChuanHoa:
         self.doc = Document(input_source)
         self._setup_page_layout()
         self._clear_footers()
+        
+        # [MỚI THÊM] Tiền xử lý Phẫu thuật Shift+Enter an toàn (Ép cứng hoa/thường)
+        self._tien_xu_ly_shift_enter()
 
         all_blocks = self._khu_vuc_2_nhan_dang_du_lieu()
         buckets = self._khu_vuc_3_kiem_dinh_loi(all_blocks)
