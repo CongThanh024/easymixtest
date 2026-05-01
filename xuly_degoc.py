@@ -110,23 +110,25 @@ class XuLyDeChuanHoa:
         current_pos = 0
         for run in paragraph.runs:
             run_len = len(run.text)
+            # Chỉ xét đúng tọa độ của chữ cái mốc (a, b, c, d hoặc A, B, C, D)
             if current_pos <= label_index < current_pos + run_len:
-                if (run.font.color and run.font.color.rgb == RGBColor(255, 0, 0)) or run.font.underline: return True
-                return False
+                is_key = run.font.underline
+                if run.font.color and run.font.color.rgb:
+                    try:
+                        r, g, b = run.font.color.rgb
+                        # Chỉ chấp nhận Tone Đỏ (R>=150, G<=50, B<=50)
+                        if r >= 150 and g <= 50 and b <= 50:
+                            is_key = True
+                    except: pass
+                # Chốt kết quả và thoát ngay, bỏ qua dấu ngoặc và nội dung phía sau
+                return is_key 
             current_pos += run_len
-        return False
-
-    def _check_is_highlighted_general(self, paras):
-        for p in paras:
-            for run in p.runs:
-                if (run.font.color and run.font.color.rgb == RGBColor(255, 0, 0)) or run.font.underline: return True
         return False
 
     def _generate_tf_key(self, cau_obj):
         labels = ['a', 'b', 'c', 'd']; key_chars = []
         for lbl in labels:
-            paras = cau_obj['options'].get(lbl, [])
-            if cau_obj['tf_keys'].get(lbl, False) or self._check_is_highlighted_general(paras): key_chars.append("T")
+            if cau_obj['tf_keys'].get(lbl, False): key_chars.append("T")
             else: key_chars.append("F")
         return "".join(key_chars)
 
