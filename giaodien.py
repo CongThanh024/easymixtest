@@ -71,7 +71,7 @@ def hien_thi_sidebar(supabase=None):
         if config['co_header']:
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở GD và ĐT', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên ngắn gọn!*")
             
-            so_in = st.text_input("Tên Sở (Chỉ nhập tên Tỉnh/TP):", key="header_so", placeholder="VD: HÀ NỘI hoặc TP HỒ CHÍ MINH")
+            so_in = st.text_input("Tên Sở (chỉ nhập tên tỉnh/Tp) hoặc Ủy Ban :", key="header_so", placeholder="VD: TP HỒ CHÍ MINH hoặc Ủy Ban...")
             truong_in = st.text_input("Tên Trường :", key="header_truong", placeholder="VD: THPT/THCS TRẦN ...")
             to_in = st.text_input("Tổ Chuyên Môn (Chỉ nhập tên):", key="header_to", placeholder="VD: TOÁN - TIN")
             kythi_in = st.text_input("Kỳ Thi:", key="header_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
@@ -81,7 +81,7 @@ def hien_thi_sidebar(supabase=None):
             
             # --- BỘ LỌC CHỐNG LẶP TỪ THÔNG MINH ---
             val_so = f"SỞ GD VÀ ĐT {so_in}" if so_in else ""
-            if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
+            if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT Ủy Ban", "Ủy Ban").replace("SỞ GD VÀ ĐT ỦY BAN", "ỦY BAN")
                 
             val_truong = f"TRƯỜNG {truong_in}" if truong_in else ""
             if val_truong: 
