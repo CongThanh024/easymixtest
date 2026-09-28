@@ -86,7 +86,7 @@ def hien_thi_sidebar(supabase=None):
             val_truong = f"TRƯỜNG {truong_in}" if truong_in else ""
             if val_truong: 
                 # [ĐÃ SỬA] Bắt thêm lỗi lặp chữ "THPT THPT"
-                val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT").replace("THPT THPT", "THPT")
+                val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT").replace("THPT THPT", "THPT").replace("THPT THCS", "THCS")
                 
             val_to = f"TỔ {to_in}" if to_in else ""
             if val_to: val_to = val_to.replace("TỔ TỔ", "TỔ")
