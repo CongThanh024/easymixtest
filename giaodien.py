@@ -72,7 +72,7 @@ def hien_thi_sidebar(supabase=None):
             st.caption("✨ *Hệ thống tự động thêm chữ 'Sở GD và ĐT', 'Trường', 'Tổ', 'Năm học'. Bạn chỉ cần nhập tên ngắn gọn!*")
             
             so_in = st.text_input("Tên Sở (Chỉ nhập tên Tỉnh/TP):", key="header_so", placeholder="VD: HÀ NỘI hoặc TP HỒ CHÍ MINH")
-            truong_in = st.text_input("Tên Trường (Chỉ nhập tên):", key="header_truong", placeholder="VD: CHUYÊN KHTN")
+            truong_in = st.text_input("Tên Trường :", key="header_truong", placeholder="VD: THPT/THCS TRẦN ...")
             to_in = st.text_input("Tổ Chuyên Môn (Chỉ nhập tên):", key="header_to", placeholder="VD: TOÁN - TIN")
             kythi_in = st.text_input("Kỳ Thi:", key="header_kythi", placeholder="VD: KIỂM TRA GIỮA HỌC KỲ I")
             namhoc_in = st.text_input("Năm học (Chỉ cần nhập số):", key="header_namhoc", placeholder="VD: 2025 - 2026")
@@ -83,7 +83,7 @@ def hien_thi_sidebar(supabase=None):
             val_so = f"SỞ GD VÀ ĐT {so_in}" if so_in else ""
             if val_so: val_so = val_so.replace("SỞ GD VÀ ĐT SỞ GD VÀ ĐT", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ GD", "SỞ GD VÀ ĐT").replace("SỞ GD VÀ ĐT SỞ", "SỞ GD VÀ ĐT")
                 
-            val_truong = f"TRƯỜNG THPT {truong_in}" if truong_in else ""
+            val_truong = f"TRƯỜNG {truong_in}" if truong_in else ""
             if val_truong: 
                 # [ĐÃ SỬA] Bắt thêm lỗi lặp chữ "THPT THPT"
                 val_truong = val_truong.replace("TRƯỜNG THPT TRƯỜNG THPT", "TRƯỜNG THPT").replace("TRƯỜNG THPT TRƯỜNG", "TRƯỜNG THPT").replace("THPT THPT", "THPT")
